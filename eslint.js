@@ -11,12 +11,13 @@
 // Rule set: ESLint `recommended` on every JS/TS file; typescript-eslint `strict-type-checked` and
 // `stylistic-type-checked` on every TS file (type information from the TypeScript project service);
 // for React repos @eslint-react (the maintained flat-config React rule set; eslint-plugin-react 7.x
-// fails under ESLint 10), eslint-plugin-react-hooks and eslint-plugin-jsx-a11y;
+// fails under ESLint 10), eslint-plugin-react-hooks and eslint-plugin-jsx-a11y-x (the
+// es-tooling port of eslint-plugin-jsx-a11y, whose 6.x line declares ESLint 9 at most);
 // eslint-config-prettier last so formatting is Prettier's job alone.
 import eslintReact from "@eslint-react/eslint-plugin";
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier/flat";
-import jsxA11y from "eslint-plugin-jsx-a11y";
+import jsxA11y from "eslint-plugin-jsx-a11y-x";
 import reactHooks from "eslint-plugin-react-hooks";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
@@ -185,7 +186,7 @@ export function releaseready(options) {
             files: [...jsxFiles, ...tsFiles, ...jsFiles],
             extends: [
               reactHooks.configs.flat["recommended-latest"],
-              jsxA11y.flatConfigs.recommended,
+              jsxA11y.configs.recommended,
             ],
           },
           {
