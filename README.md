@@ -33,17 +33,19 @@ export default defineConfig(
 );
 ```
 
-| Files             | Rules                                                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| every JS/TS file  | ESLint `recommended`; unused disable directives are errors; Node globals                                                 |
-| `*.ts`, `*.tsx` … | typescript-eslint `strict-type-checked` + `stylistic-type-checked`, typed through the TypeScript project service         |
-| React (`react`)   | `@eslint-react` recommended (type-checked on TS), `eslint-plugin-react-hooks`, `eslint-plugin-jsx-a11y`, browser globals |
-| last              | `eslint-config-prettier`, so formatting is Prettier's job only                                                           |
+| Files             | Rules                                                                                                                      |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| every JS/TS file  | ESLint `recommended`; unused disable directives are errors; Node globals                                                   |
+| `*.ts`, `*.tsx` … | typescript-eslint `strict-type-checked` + `stylistic-type-checked`, typed through the TypeScript project service           |
+| React (`react`)   | `@eslint-react` recommended (type-checked on TS), `eslint-plugin-react-hooks`, `eslint-plugin-jsx-a11y-x`, browser globals |
+| last              | `eslint-config-prettier`, so formatting is Prettier's job only                                                             |
 
 Shared rule settings, each with its reason, are in [`eslint.js`](eslint.js): `_`-prefixed unused bindings, `node:test`
 calls allowed as floating promises, numbers allowed in template literals.
 
-`@eslint-react` replaces `eslint-plugin-react`, whose 7.x line fails under ESLint 10. Its hooks rules that duplicate
+`@eslint-react` replaces `eslint-plugin-react`, whose 7.x line fails under ESLint 10, and `eslint-plugin-jsx-a11y-x`
+(the es-tooling port, rule prefix `jsx-a11y-x/`) replaces `eslint-plugin-jsx-a11y`, whose 6.x line declares ESLint 9 at
+most, so `npm ci` refuses it next to ESLint 10. Its hooks rules that duplicate
 `eslint-plugin-react-hooks` are turned off, so each hooks problem is reported once.
 
 Every TS file must be in a tsconfig the project service can find. Config files outside every tsconfig can be listed in

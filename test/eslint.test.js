@@ -44,7 +44,7 @@ describe("releaseready() ESLint config", () => {
   test("React preset applies react, react-hooks and jsx-a11y", async () => {
     const ids = await ruleIds("react", true, "bad.tsx");
     for (const rule of [
-      "jsx-a11y/alt-text",
+      "jsx-a11y-x/alt-text",
       "react-hooks/rules-of-hooks",
       "react-hooks/exhaustive-deps",
     ]) {
@@ -55,7 +55,7 @@ describe("releaseready() ESLint config", () => {
   test("React rules stay off unless asked for", async () => {
     const ids = await ruleIds("react", false, "bad.tsx");
     assert.ok(
-      !ids.some((id) => id.startsWith("jsx-a11y/") || id.startsWith("react")),
+      !ids.some((id) => id.startsWith("jsx-a11y") || id.startsWith("react")),
       ids.join(", "),
     );
   });
