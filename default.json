@@ -1,0 +1,60 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "releaseready shared Renovate preset. Use it with: { \"extends\": [\"github>releaseready/config\"] }",
+  "extends": [
+    "config:recommended",
+    ":semanticCommitsDisabled",
+    "helpers:pinGitHubActionDigests",
+    ":pinDevDependencies",
+    ":maintainLockFilesMonthly"
+  ],
+  "timezone": "Asia/Hong_Kong",
+  "schedule": ["before 6am on monday"],
+  "minimumReleaseAge": "3 days",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "rangeStrategy": "pin",
+  "labels": ["dependencies"],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"],
+    "minimumReleaseAge": null,
+    "labels": ["security"]
+  },
+  "packageRules": [
+    {
+      "description": "One PR a week for every non-major update of tooling and dev dependencies.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin"],
+      "groupName": "dev dependencies (non-major)"
+    },
+    {
+      "description": "One PR for GitHub Actions digest and version updates.",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Lint, format and type-check tooling moves together.",
+      "matchPackageNames": [
+        "@releaseready/config",
+        "eslint",
+        "@eslint/js",
+        "typescript-eslint",
+        "prettier",
+        "typescript"
+      ],
+      "groupName": "code-quality tooling"
+    },
+    {
+      "description": "Python tooling (observability).",
+      "matchManagers": ["pep621", "pip_requirements"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Python dependencies (non-major)"
+    },
+    {
+      "description": "Node.js runtime pins (.nvmrc, engines) are an owner decision: one PR, never automerged.",
+      "matchDepNames": ["node"],
+      "groupName": "Node.js runtime"
+    }
+  ]
+}
