@@ -47,6 +47,7 @@ export function loadConfig(root) {
       readFileSync(new URL("config.schema.json", import.meta.url), "utf8"),
     )
   );
+  // nosemgrep: javascript.ajv.security.audit.ajv-allerrors-true.ajv-allerrors-true -- validates the repo's own small allowlist file, not untrusted input, and we want every error listed
   const ajv = new Ajv({ allErrors: true, strict: true, strictRequired: false });
   const validate = ajv.compile(schema);
   if (!validate(config)) {
