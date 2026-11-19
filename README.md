@@ -106,11 +106,13 @@ published one (`skill-drift`), so it changes only here.
 ## Security scanners
 
 `.github/actions/security-scan` runs gitleaks (full git history), trivy fs (vuln, secret, misconfig; HIGH and CRITICAL,
-fixed only), semgrep (`p/default`) and zizmor on every PR. Add a job to `pr.yml`:
+fixed only), semgrep (`p/default`) and zizmor on every PR. It runs on Linux x64 and on macOS arm64 (the self-hosted
+`rr-local` runner; python3 must be installed for semgrep) and picks the pinned, checksum-verified binary by `runner.os` and
+`runner.arch`. Add a job to `pr.yml`:
 
 ```yaml
 security:
-  runs-on: ubuntu-24.04
+  runs-on: ubuntu-24.04 # private repos: [self-hosted, rr-local]
   timeout-minutes: 15
   steps:
     - uses: actions/checkout@<sha> # same pin as the other jobs
