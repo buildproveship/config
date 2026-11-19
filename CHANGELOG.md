@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1 (2026-11-19)
+
+- Skill: merge only when `pr.yml` is green; says where GitHub branch protection enforces it and where the local
+  merge hook does (free-plan private repos).
+
 ## 2.0.0 (2026-11-19)
 
 Breaking: new error-level rules, so consumers fix or explicitly allow each finding when they upgrade.
