@@ -15,6 +15,14 @@
   "prHourlyLimit": 2,
   "rangeStrategy": "pin",
   "labels": ["dependencies"],
+  "npmrc": "@releaseready:registry=https://npm.pkg.github.com/",
+  "hostRules": [
+    {
+      "matchHost": "npm.pkg.github.com",
+      "hostType": "npm",
+      "token": "{{ secrets.GH_PACKAGES_TOKEN }}"
+    }
+  ],
   "vulnerabilityAlerts": {
     "enabled": true,
     "schedule": ["at any time"],
@@ -32,6 +40,12 @@
       "description": "One PR for GitHub Actions digest and version updates.",
       "matchManagers": ["github-actions"],
       "groupName": "GitHub Actions"
+    },
+    {
+      "description": "All @releaseready/* updates in one PR, never automerged.",
+      "matchPackageNames": ["@releaseready/*"],
+      "groupName": "@releaseready packages",
+      "automerge": false
     },
     {
       "description": "Lint, format and type-check tooling moves together.",
