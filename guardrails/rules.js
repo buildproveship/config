@@ -15,6 +15,7 @@ import { minimatch } from "minimatch";
 /**
  * @typedef {object} RepoFiles
  * @property {string[]} paths every tracked or unignored file, repo-relative
+ * @property {string[]} tracked every path in the git index, repo-relative (not filtered by the working tree)
  * @property {(path: string) => string} read
  */
 
@@ -500,6 +501,24 @@ function readmeHistory(repo) {
   );
 }
 
+/**
+ * macOS rewrites a tracked .DS_Store and dirties every checkout. Checks the git index (`git ls-files`), not the
+ * working tree: an ignored or untracked .DS_Store is harmless, a tracked one is the problem.
+ *
+ * @type {Rule}
+ */
+function trackedDsStore(repo) {
+  return repo.tracked
+    .filter((path) => path.split("/").pop() === ".DS_Store")
+    .map((path) => ({
+      rule: "tracked-ds-store",
+      path,
+      line: 0,
+      message:
+        "tracked .DS_Store: run `git rm --cached` on it and add .DS_Store to .gitignore",
+    }));
+}
+
 /** Every static rule, in report order. */
 export const rules = [
   dependencySource,
@@ -510,4 +529,5 @@ export const rules = [
   skippedTests,
   eslintConfigOverrides,
   readmeHistory,
+  trackedDsStore,
 ];

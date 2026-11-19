@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.2.3 (2026-11-20)
+
+- `releaseready-guardrails`: new rule `tracked-ds-store` fails when any `.DS_Store` is in the git index (`git ls-files`, any depth); untracked or ignored ones pass. macOS rewrites a tracked `.DS_Store` and dirties every checkout. Released as a patch on the owner's instruction. Measured against `origin/main` of every consumer repo: 0 findings except ReleaseReady and observability (1 each, being removed in their own PRs) and this repo (1, removed in its own PR).
+
 ## 2.2.2 (2026-11-19)
 
 - Renovate preset: Mend-hosted Renovate can read the private `@releaseready/*` packages (`npmrc` scope registry plus an `npm.pkg.github.com` host rule using the `GH_PACKAGES_TOKEN` Mend org secret). `@releaseready/*` updates are grouped and never automerged.

@@ -68,6 +68,13 @@ export function repoFiles(root) {
     ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
     { cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 },
   );
+  const tracked = execFileSync("git", ["ls-files", "-z", "--cached"], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 256 * 1024 * 1024,
+  })
+    .split("\0")
+    .filter(Boolean);
   const paths = [...new Set(output.split("\0").filter(Boolean))]
     .filter((p) => existsSync(join(root, p)))
     .filter((p) => !matches(p, alwaysExcluded))
@@ -76,6 +83,7 @@ export function repoFiles(root) {
   const cache = new Map();
   return {
     paths,
+    tracked,
     read(path) {
       let text = cache.get(path);
       if (text === undefined) {
