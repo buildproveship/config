@@ -36,6 +36,7 @@ runs:
           exit 1
         fi
     - name: trivy fs
+      if: ${{ !cancelled() }}
       shell: bash
       env:
         TRIVY_VERSION: 0.76.2
@@ -49,6 +50,7 @@ runs:
         [ -f .trivyignore ] && args+=(--ignorefile .trivyignore)
         "$RUNNER_TEMP/trivy/trivy" "${args[@]}" .
     - name: semgrep
+      if: ${{ !cancelled() }}
       shell: bash
       env:
         SEMGREP_VERSION: 1.186.0
@@ -62,6 +64,7 @@ runs:
         "$RUNNER_TEMP/semgrep/bin/semgrep" scan --config p/default --error --metrics=off --quiet --exclude node_modules \
           --exclude-rule package_managers.npm.npm-missing-minimum-release-age.npm-missing-minimum-release-age
     - name: zizmor
+      if: ${{ !cancelled() }}
       shell: bash
       env:
         ZIZMOR_VERSION: 1.32.0
