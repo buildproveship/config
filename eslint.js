@@ -14,10 +14,16 @@
 // fails under ESLint 10), eslint-plugin-react-hooks and eslint-plugin-jsx-a11y-x (the
 // es-tooling port of eslint-plugin-jsx-a11y, whose 6.x line declares ESLint 9 at most);
 // eslint-config-prettier last so formatting is Prettier's job alone.
+//
+// Suppressions (standard 2 of the releaseready-code-quality skill): every eslint-disable names its rules and carries
+// `-- reason` (@eslint-community/eslint-comments), `@ts-ignore`/`@ts-nocheck` are banned and `@ts-expect-error` needs a
+// description (@typescript-eslint/ban-ts-comment, on JS files too), and focused `.only` tests fail (no-only-tests).
+import eslintComments from "@eslint-community/eslint-plugin-eslint-comments/configs";
 import eslintReact from "@eslint-react/eslint-plugin";
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier/flat";
 import jsxA11y from "eslint-plugin-jsx-a11y-x";
+import noOnlyTests from "eslint-plugin-no-only-tests";
 import reactHooks from "eslint-plugin-react-hooks";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
@@ -107,6 +113,40 @@ const sharedTypeScriptRules = {
 };
 
 /**
+ * Suppression rules for every JS/TS file. A disable comment says which rule and why; a TS directive says why.
+ *
+ * @type {import("eslint").Linter.RulesRecord} */
+export const suppressionRules = {
+  "@eslint-community/eslint-comments/require-description": [
+    "error",
+    { ignore: [] },
+  ],
+  "@eslint-community/eslint-comments/no-unlimited-disable": "error",
+  "@eslint-community/eslint-comments/disable-enable-pair": [
+    "error",
+    { allowWholeFile: true },
+  ],
+  "@typescript-eslint/ban-ts-comment": [
+    "error",
+    {
+      "ts-expect-error": "allow-with-description",
+      "ts-ignore": true,
+      "ts-nocheck": true,
+      "ts-check": false,
+      minimumDescriptionLength: 10,
+    },
+  ],
+  "no-only-tests/no-only-tests": [
+    "error",
+    {
+      block: ["describe", "it", "test", "suite", "context", "Scenario"],
+      focus: ["only"],
+      fix: false,
+    },
+  ],
+};
+
+/**
  * @typedef {object} ReleasereadyOptions
  * @property {string} tsconfigRootDir Directory the TypeScript project service resolves tsconfig files from
  *   (pass `import.meta.dirname`).
@@ -179,6 +219,16 @@ export function releaseready(options) {
       },
       rules: sharedTypeScriptRules,
     },
+    {
+      name: "releaseready/suppressions",
+      files: [...jsFiles, ...tsFiles],
+      extends: [eslintComments.recommended],
+      plugins: {
+        "@typescript-eslint": tseslint.plugin,
+        "no-only-tests": noOnlyTests,
+      },
+      rules: suppressionRules,
+    },
     react
       ? [
           {
@@ -211,5 +261,3 @@ export function releaseready(options) {
     prettier,
   );
 }
-
-export default releaseready;

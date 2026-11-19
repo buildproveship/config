@@ -1,4 +1,4 @@
-# Light pull request checks: format, typecheck, lint and tests (owner decision of 18 Nov 2026).
+# Light pull request checks: format, typecheck, lint, tests and releaseready-guardrails (owner decision of 18 Nov 2026).
 name: Pull request
 on:
   pull_request:
@@ -20,7 +20,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Format, typecheck, lint and tests
+      - name: Format, typecheck, lint, tests and guardrails
         run: npm run check
       - name: Validate the Renovate preset
-        run: npx --yes --package renovate@44.251.0 -- renovate-config-validator --strict default.json renovate.json
+        run: npm run renovate:check
