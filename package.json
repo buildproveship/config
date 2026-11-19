@@ -1,6 +1,6 @@
 {
   "name": "@releaseready/config",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Shared ESLint flat config, Prettier config, strict tsconfig base, Renovate preset, the releaseready-guardrails checker and the releaseready-code-quality skill for releaseready repos.",
   "license": "UNLICENSED",
   "type": "module",

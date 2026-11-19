@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.2.2 (2026-11-19)
+
+- Renovate preset: Mend-hosted Renovate can read the private `@releaseready/*` packages (`npmrc` scope registry plus an `npm.pkg.github.com` host rule using the `GH_PACKAGES_TOKEN` Mend org secret). `@releaseready/*` updates are grouped and never automerged.
+
 ## 2.2.1 (2026-11-19)
 
 - `security-scan`: scanner downloads retry (curl `--retry 5 --retry-all-errors`); a flaky `curl: (18) partial file` failed PR checks on the self-hosted runner.
