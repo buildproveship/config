@@ -3,7 +3,7 @@ rules:
     ignore:
       # Reason: we publish to GitHub Packages (npm.pkg.github.com), which has no OIDC trusted publishing; the
       # GITHUB_TOKEN with packages: write is the supported credential.
-      - release.yml:32
+      - release.yml:34
   self-repository:
     ignore:
       # Reason: "$/..." is rejected by the semgrep github-actions-mutable-action-tag rule, which wants @sha; the
