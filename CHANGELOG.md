@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 (2026-11-19)
+
+- New composite action `.github/actions/security-scan`: gitleaks, trivy fs, semgrep and zizmor, each version pinned
+  (binaries are checksum-verified; the org allows only GitHub-owned actions). `pr.yml` runs it in every repo.
+  Baselines live in the consumer repo (see README "Security scanners").
+
 ## 2.0.1 (2026-11-19)
 
 - Skill: merge only when `pr.yml` is green; says where GitHub branch protection enforces it and where the local
