@@ -192,6 +192,36 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
+  test("tracked-ds-store: fails on a tracked .DS_Store at any depth, not on an untracked or ignored one", async () => {
+    const root = await repo({
+      ".gitignore": "ignored/.DS_Store\n",
+      ".DS_Store": "x",
+      "docs/.DS_Store": "x",
+      "docs/a.md": "a\n",
+      "ignored/.DS_Store": "x",
+      "untracked/.DS_Store": "x",
+    });
+    execFileSync("git", ["add", "-f", ".gitignore", ".DS_Store", "docs"], {
+      cwd: root,
+    });
+    const hits = (await findAll(root))
+      .filter((f) => f.rule === "tracked-ds-store")
+      .map((f) => f.path);
+    assert.deepEqual(hits, [".DS_Store", "docs/.DS_Store"]);
+
+    execFileSync(
+      "git",
+      ["rm", "--cached", "-q", ".DS_Store", "docs/.DS_Store"],
+      {
+        cwd: root,
+      },
+    );
+    assert.deepEqual(
+      (await findAll(root)).filter((f) => f.rule === "tracked-ds-store"),
+      [],
+    );
+  });
+
   test("skill-drift: missing copy, edited copy, extra file and AGENTS.md without the pointer", async () => {
     const root = await repo(
       { "AGENTS.md": "No pointer here.\n" },
