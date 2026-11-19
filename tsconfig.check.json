@@ -8,6 +8,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["*.js", "test/**/*.js"],
+  "include": ["*.js", "modules.d.ts", "guardrails/*.js", "test/**/*.js"],
   "exclude": ["test/fixtures/**"]
 }

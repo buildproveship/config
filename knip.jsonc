@@ -1,0 +1,7 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  // Fixtures hold deliberate violations that only the tests read, by path.
+  "ignore": ["test/fixtures/**"],
+  // jscpd is started by path from guardrails/index.js (binPath), which knip cannot see.
+  "ignoreDependencies": ["jscpd"],
+}

@@ -52,6 +52,23 @@ describe("releaseready() ESLint config", () => {
     }
   });
 
+  test("suppressions need a rule and a reason; @ts-ignore and .only fail", async () => {
+    const ids = await ruleIds("node", false, "suppressions.ts");
+    for (const rule of [
+      "@eslint-community/eslint-comments/require-description",
+      "@eslint-community/eslint-comments/no-unlimited-disable",
+      "@typescript-eslint/ban-ts-comment",
+      "no-only-tests/no-only-tests",
+    ]) {
+      assert.ok(ids.includes(rule), `${rule} missing from ${ids.join(", ")}`);
+    }
+    // ban-ts-comment fires twice: once for the ignore directive, once for the expect-error without a description.
+    assert.equal(
+      ids.filter((id) => id === "@typescript-eslint/ban-ts-comment").length,
+      2,
+    );
+  });
+
   test("React rules stay off unless asked for", async () => {
     const ids = await ruleIds("react", false, "bad.tsx");
     assert.ok(

@@ -1,7 +1,7 @@
 {
   "name": "@releaseready/config",
-  "version": "1.0.0",
-  "description": "Shared ESLint flat config, Prettier config, strict tsconfig base and Renovate preset for releaseready repos.",
+  "version": "2.0.0",
+  "description": "Shared ESLint flat config, Prettier config, strict tsconfig base, Renovate preset, the releaseready-guardrails checker and the releaseready-code-quality skill for releaseready repos.",
   "license": "UNLICENSED",
   "type": "module",
   "repository": {
@@ -20,7 +20,10 @@
     "prettier.js",
     "types",
     "tsconfig.json",
-    "default.json"
+    "default.json",
+    "guardrails/*.js",
+    "guardrails/config.schema.json",
+    "skill"
   ],
   "exports": {
     "./eslint": {
@@ -33,7 +36,12 @@
     },
     "./tsconfig.json": "./tsconfig.json",
     "./renovate": "./default.json",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./guardrails": {
+      "types": "./types/guardrails/index.d.ts",
+      "default": "./guardrails/index.js"
+    },
+    "./guardrails/config.schema.json": "./guardrails/config.schema.json"
   },
   "prettier": "./prettier.js",
   "scripts": {
@@ -44,8 +52,9 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -p tsconfig.check.json",
     "test": "npm run build && node --test test/*.test.js",
-    "renovate:check": "renovate-config-validator --strict default.json renovate.json",
-    "check": "npm run format:check && npm run typecheck && npm run lint && npm test"
+    "renovate:check": "npx --yes --package renovate@44.251.0 -- renovate-config-validator --strict default.json renovate.json",
+    "check": "npm run format:check && npm run typecheck && npm run lint && npm test && npm run check:guardrails",
+    "check:guardrails": "node guardrails/cli.js"
   },
   "peerDependencies": {
     "eslint": "^10.0.0",
@@ -61,12 +70,19 @@
     }
   },
   "dependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
     "@eslint-react/eslint-plugin": "5.30.4",
     "@eslint/js": "10.0.1",
+    "ajv": "8.20.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-jsx-a11y-x": "0.2.0",
+    "eslint-plugin-no-only-tests": "3.4.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.14.0",
+    "jscpd": "5.4.3",
+    "jsonc-parser": "3.3.1",
+    "knip": "6.46.1",
+    "minimatch": "11.0.9",
     "typescript-eslint": "8.73.0"
   },
   "devDependencies": {
@@ -74,5 +90,8 @@
     "eslint": "10.15.0",
     "prettier": "3.10.1",
     "typescript": "5.9.3"
+  },
+  "bin": {
+    "releaseready-guardrails": "./guardrails/cli.js"
   }
 }

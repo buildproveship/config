@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "releaseready-guardrails.json",
+  "description": "Repo settings for releaseready-guardrails. Every exception carries a reason a reviewer can check.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "allow": {
+      "description": "Findings that are correct here. Each entry names the rule, a path glob, optionally a substring of the offending line, and why (for legacy code: the current consumer). Entries that match nothing are errors.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule", "path", "reason"],
+        "properties": {
+          "rule": {
+            "enum": [
+              "dependency-source",
+              "tsconfig-private-path",
+              "tsconfig-not-strict",
+              "build-in-node-modules",
+              "copied-schema-primitive",
+              "copied-canonical-digest",
+              "copied-jwt-verifier",
+              "copied-wcag-contrast",
+              "legacy-marker",
+              "skipped-test",
+              "eslint-rule-off-without-reason",
+              "readme-dated-history"
+            ]
+          },
+          "path": { "type": "string", "minLength": 1 },
+          "match": { "type": "string", "minLength": 3 },
+          "max": { "type": "integer", "minimum": 1 },
+          "reason": {
+            "type": "string",
+            "minLength": 20,
+            "not": {
+              "pattern": "^(TODO|[Tt]odo|TBD|[Pp]re-?existing|[Bb]aseline)\\b"
+            }
+          }
+        }
+      }
+    },
+    "jscpd": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "threshold": { "type": "number", "minimum": 0, "maximum": 100 },
+        "reason": { "type": "string", "minLength": 20 },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "ignore": { "type": "array", "items": { "type": "string" } }
+      },
+      "if": {
+        "required": ["threshold"],
+        "properties": {
+          "threshold": { "type": "number", "exclusiveMinimum": 3 }
+        }
+      },
+      "then": { "required": ["reason"] }
+    },
+    "knip": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 20 },
+        "args": { "type": "array", "items": { "type": "string" } }
+      },
+      "if": {
+        "required": ["enabled"],
+        "properties": { "enabled": { "type": "boolean", "const": false } }
+      },
+      "then": { "required": ["reason"] }
+    }
+  }
+}

@@ -1,7 +1,8 @@
 # @releaseready/config
 
 One source for the code-quality settings every releaseready repo uses: an ESLint flat config, a Prettier config, a strict
-tsconfig base and a Renovate preset. Published to GitHub Packages as `@releaseready/config`.
+tsconfig base, a Renovate preset, the `releaseready-guardrails` checker and the `releaseready-code-quality` skill.
+Published to GitHub Packages as `@releaseready/config`.
 
 ## Install
 
@@ -17,7 +18,7 @@ and `export NODE_AUTH_TOKEN=$(gh auth token)`); in GitHub Actions `actions/setup
 public.
 
 ```sh
-npm install --save-dev --save-exact @releaseready/config eslint prettier typescript
+npm install --save-dev @releaseready/config eslint prettier typescript
 ```
 
 ## ESLint
@@ -33,12 +34,13 @@ export default defineConfig(
 );
 ```
 
-| Files             | Rules                                                                                                                      |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| every JS/TS file  | ESLint `recommended`; unused disable directives are errors; Node globals                                                   |
-| `*.ts`, `*.tsx` … | typescript-eslint `strict-type-checked` + `stylistic-type-checked`, typed through the TypeScript project service           |
-| React (`react`)   | `@eslint-react` recommended (type-checked on TS), `eslint-plugin-react-hooks`, `eslint-plugin-jsx-a11y-x`, browser globals |
-| last              | `eslint-config-prettier`, so formatting is Prettier's job only                                                             |
+| Files             | Rules                                                                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| every JS/TS file  | ESLint `recommended`; unused disable directives are errors; Node globals                                                                  |
+| `*.ts`, `*.tsx` … | typescript-eslint `strict-type-checked` + `stylistic-type-checked`, typed through the TypeScript project service                          |
+| React (`react`)   | `@eslint-react` recommended (type-checked on TS), `eslint-plugin-react-hooks`, `eslint-plugin-jsx-a11y-x`, browser globals                |
+| every JS/TS file  | suppressions: `eslint-disable` needs `-- reason`, no `@ts-ignore`/`@ts-nocheck`, `@ts-expect-error` needs a description, no `.only` tests |
+| last              | `eslint-config-prettier`, so formatting is Prettier's job only                                                                            |
 
 Shared rule settings, each with its reason, are in [`eslint.js`](eslint.js): `_`-prefixed unused bindings, `node:test`
 calls allowed as floating promises, numbers allowed in template literals.
@@ -83,10 +85,29 @@ Weekly (Monday before 06:00 Hong Kong time), 3-day minimum release age, pinned v
 non-major dev updates, one group for lint/format/typecheck tooling, security updates at any time. Renovate needs the
 [Renovate GitHub App](https://github.com/apps/renovate) installed on the `releaseready` organisation.
 
+## Guardrails and the code-quality skill
+
+`releaseready-guardrails` is the mechanical half of the
+[`releaseready-code-quality` skill](skill/releaseready-code-quality/SKILL.md), which encodes the 191 findings of the
+18 Nov 2026 cross-repo review. Run it from the repo root:
+
+```sh
+npx releaseready-guardrails            # static rules + knip + jscpd; what pr.yml runs (wrap it in npm run check:guardrails)
+npx releaseready-guardrails --static   # static rules only
+npx releaseready-guardrails sync       # copy the skill to skills/releaseready-code-quality/ and .claude/skills/
+npx releaseready-guardrails baseline   # allow entries for today's findings, reasons left empty
+```
+
+The rules, the allowlist format (`releaseready-guardrails.json`, validated by
+[`guardrails/config.schema.json`](guardrails/config.schema.json)) and the AGENTS.md block are in
+[the checks reference](skill/releaseready-code-quality/references/checks.md). The skill's repo copy must equal the
+published one (`skill-drift`), so it changes only here.
+
 ## Python
 
-Python repos cannot consume an npm package; observability keeps the equivalent ruff and mypy settings in its own
-`pyproject.toml` and uses the same Renovate preset.
+Python repos cannot consume the ESLint config; observability keeps the equivalent ruff and `mypy --strict` settings in
+its own `pyproject.toml`, runs vulture and pip-audit, uses the same Renovate preset, and runs `releaseready-guardrails`
+through `npx` for the language-neutral rules (legacy markers, README history, skill drift, jscpd).
 
 ## Releasing
 
