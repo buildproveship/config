@@ -103,6 +103,31 @@ The rules, the allowlist format (`releaseready-guardrails.json`, validated by
 [the checks reference](skill/releaseready-code-quality/references/checks.md). The skill's repo copy must equal the
 published one (`skill-drift`), so it changes only here.
 
+## Security scanners
+
+`.github/actions/security-scan` runs gitleaks (full git history), trivy fs (vuln, secret, misconfig; HIGH and CRITICAL,
+fixed only), semgrep (`p/default`) and zizmor on every PR. Add a job to `pr.yml`:
+
+```yaml
+security:
+  runs-on: ubuntu-24.04
+  timeout-minutes: 15
+  steps:
+    - uses: actions/checkout@<sha> # same pin as the other jobs
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: releaseready/config/.github/actions/security-scan@<full commit sha of the release tag>
+```
+
+Existing findings go in a baseline in the consumer repo, never a switch-off:
+
+- gitleaks: `.gitleaks-baseline.json` (`gitleaks git --report-path .gitleaks-baseline.json --redact` once; review each
+  entry first, a live secret is rotated, not baselined).
+- trivy: `.trivyignore`, one id per line with a reason comment above it.
+- semgrep: an inline `nosemgrep: <rule-id> -- reason` comment on the line.
+- zizmor: `.github/zizmor.yml` with `rules.<id>.ignore` entries and a reason comment each.
+
 ## Python
 
 Python repos cannot consume the ESLint config; observability keeps the equivalent ruff and `mypy --strict` settings in

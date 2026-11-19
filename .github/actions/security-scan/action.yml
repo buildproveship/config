@@ -1,0 +1,65 @@
+# Shared security scanners for every releaseready repo's pr.yml: gitleaks, trivy fs, semgrep and zizmor.
+# The caller checks out with fetch-depth: 0 first. Baselines live in the consumer repo (see README):
+#   .gitleaks-baseline.json   gitleaks findings accepted today (each is reviewed, never a live secret)
+#   .gitleaks.toml            optional gitleaks rules/allowlist
+#   .trivyignore              trivy ids with a reason comment on the line above
+#   inline `nosemgrep: <rule-id> -- reason` comments for accepted semgrep findings
+#   .github/zizmor.yml        zizmor rule config (ignores need a reason comment)
+name: releaseready security scan
+description: Run gitleaks, trivy fs, semgrep and zizmor. Fails on any finding not in the repo's baseline.
+runs:
+  using: composite
+  steps:
+    - name: gitleaks
+      shell: bash
+      env:
+        GITLEAKS_VERSION: 8.30.1
+        GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+      run: |
+        set -euo pipefail
+        curl -fsSL -o "$RUNNER_TEMP/gitleaks.tgz" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+        echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tgz" | sha256sum -c -
+        mkdir "$RUNNER_TEMP/gitleaks" && tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP/gitleaks" gitleaks
+        args=(git --redact --no-banner --exit-code 1)
+        [ -f .gitleaks-baseline.json ] && args+=(--baseline-path .gitleaks-baseline.json)
+        [ -f .gitleaks.toml ] && args+=(--config .gitleaks.toml)
+        "$RUNNER_TEMP/gitleaks/gitleaks" "${args[@]}" .
+    - name: trivy fs
+      shell: bash
+      env:
+        TRIVY_VERSION: 0.76.2
+        TRIVY_SHA256: bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf
+      run: |
+        set -euo pipefail
+        curl -fsSL -o "$RUNNER_TEMP/trivy.tgz" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+        echo "${TRIVY_SHA256}  $RUNNER_TEMP/trivy.tgz" | sha256sum -c -
+        mkdir "$RUNNER_TEMP/trivy" && tar -xzf "$RUNNER_TEMP/trivy.tgz" -C "$RUNNER_TEMP/trivy" trivy
+        args=(fs --scanners vuln,secret,misconfig --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 --skip-dirs node_modules)
+        [ -f .trivyignore ] && args+=(--ignorefile .trivyignore)
+        "$RUNNER_TEMP/trivy/trivy" "${args[@]}" .
+    - name: semgrep
+      shell: bash
+      env:
+        SEMGREP_VERSION: 1.186.0
+      run: |
+        set -euo pipefail
+        python3 -m venv "$RUNNER_TEMP/semgrep"
+        "$RUNNER_TEMP/semgrep/bin/pip" install --quiet "semgrep==${SEMGREP_VERSION}"
+        # One rule is excluded, for this reason: npm-missing-minimum-release-age wants `min-release-age = 7` in .npmrc,
+        # which needs npm >= 11.10 (we pin 11.4.2) and would block our own @releaseready packages for 7 days after
+        # each release. Versions are pinned by the lockfile and Renovate. Revisit when npm is upgraded.
+        "$RUNNER_TEMP/semgrep/bin/semgrep" scan --config p/default --error --metrics=off --quiet --exclude node_modules \
+          --exclude-rule package_managers.npm.npm-missing-minimum-release-age.npm-missing-minimum-release-age
+    - name: zizmor
+      shell: bash
+      env:
+        ZIZMOR_VERSION: 1.32.0
+        ZIZMOR_SHA256: bb110cc765eca9cd7efb2e284a956be5974c60027b0970f16397d86208a9957b
+      run: |
+        set -euo pipefail
+        curl -fsSL -o "$RUNNER_TEMP/zizmor.tgz" "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/zizmor-x86_64-unknown-linux-gnu.tar.gz"
+        echo "${ZIZMOR_SHA256}  $RUNNER_TEMP/zizmor.tgz" | sha256sum -c -
+        mkdir "$RUNNER_TEMP/zizmor" && tar -xzf "$RUNNER_TEMP/zizmor.tgz" -C "$RUNNER_TEMP/zizmor"
+        args=(--offline --no-progress)
+        [ -f .github/zizmor.yml ] && args+=(--config .github/zizmor.yml)
+        "$RUNNER_TEMP/zizmor/zizmor" "${args[@]}" .
