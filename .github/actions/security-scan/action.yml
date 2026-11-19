@@ -21,7 +21,7 @@ runs:
         if [ "$RUNNER_OS-$RUNNER_ARCH" = "macOS-ARM64" ]; then asset=darwin_arm64; sha="$GITLEAKS_SHA256_DARWIN_ARM64"
         elif [ "$RUNNER_OS-$RUNNER_ARCH" = "Linux-X64" ]; then asset=linux_x64; sha="$GITLEAKS_SHA256_LINUX_X64"
         else echo "unsupported runner $RUNNER_OS-$RUNNER_ARCH" >&2; exit 1; fi
-        curl -fsSL -o "$RUNNER_TEMP/gitleaks.tgz" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_${asset}.tar.gz"
+        curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 -o "$RUNNER_TEMP/gitleaks.tgz" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_${asset}.tar.gz"
         echo "${sha}  $RUNNER_TEMP/gitleaks.tgz" | shasum -a 256 -c -
         rm -rf "$RUNNER_TEMP/gitleaks"
         mkdir "$RUNNER_TEMP/gitleaks" && tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP/gitleaks" gitleaks
@@ -52,7 +52,7 @@ runs:
         if [ "$RUNNER_OS-$RUNNER_ARCH" = "macOS-ARM64" ]; then asset=macOS-ARM64; sha="$TRIVY_SHA256_DARWIN_ARM64"
         elif [ "$RUNNER_OS-$RUNNER_ARCH" = "Linux-X64" ]; then asset=Linux-64bit; sha="$TRIVY_SHA256_LINUX_X64"
         else echo "unsupported runner $RUNNER_OS-$RUNNER_ARCH" >&2; exit 1; fi
-        curl -fsSL -o "$RUNNER_TEMP/trivy.tgz" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_${asset}.tar.gz"
+        curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 -o "$RUNNER_TEMP/trivy.tgz" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_${asset}.tar.gz"
         echo "${sha}  $RUNNER_TEMP/trivy.tgz" | shasum -a 256 -c -
         rm -rf "$RUNNER_TEMP/trivy"
         mkdir "$RUNNER_TEMP/trivy" && tar -xzf "$RUNNER_TEMP/trivy.tgz" -C "$RUNNER_TEMP/trivy" trivy
@@ -86,7 +86,7 @@ runs:
         if [ "$RUNNER_OS-$RUNNER_ARCH" = "macOS-ARM64" ]; then asset=aarch64-apple-darwin; sha="$ZIZMOR_SHA256_DARWIN_ARM64"
         elif [ "$RUNNER_OS-$RUNNER_ARCH" = "Linux-X64" ]; then asset=x86_64-unknown-linux-gnu; sha="$ZIZMOR_SHA256_LINUX_X64"
         else echo "unsupported runner $RUNNER_OS-$RUNNER_ARCH" >&2; exit 1; fi
-        curl -fsSL -o "$RUNNER_TEMP/zizmor.tgz" "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/zizmor-${asset}.tar.gz"
+        curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 -o "$RUNNER_TEMP/zizmor.tgz" "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/zizmor-${asset}.tar.gz"
         echo "${sha}  $RUNNER_TEMP/zizmor.tgz" | shasum -a 256 -c -
         rm -rf "$RUNNER_TEMP/zizmor"
         mkdir "$RUNNER_TEMP/zizmor" && tar -xzf "$RUNNER_TEMP/zizmor.tgz" -C "$RUNNER_TEMP/zizmor"

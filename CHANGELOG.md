@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.2.1 (2026-11-19)
+
+- `security-scan`: scanner downloads retry (curl `--retry 5 --retry-all-errors`); a flaky `curl: (18) partial file` failed PR checks on the self-hosted runner.
+
 ## 2.2.0 (2026-11-19)
 
 - `security-scan` action also runs on macOS arm64 (self-hosted runner): darwin-arm64 gitleaks, trivy and zizmor with their own pinned SHA-256s,
