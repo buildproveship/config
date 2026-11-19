@@ -23,8 +23,20 @@ runs:
         args=(git --redact --no-banner --exit-code 1)
         [ -f .gitleaks-baseline.json ] && args+=(--baseline-path .gitleaks-baseline.json)
         [ -f .gitleaks.toml ] && args+=(--config .gitleaks.toml)
-        "$RUNNER_TEMP/gitleaks/gitleaks" "${args[@]}" .
+        report="$RUNNER_TEMP/gitleaks-report.json"
+        if ! "$RUNNER_TEMP/gitleaks/gitleaks" "${args[@]}" --report-format json --report-path "$report" .; then
+          # The report is redacted. After reviewing every entry (a live secret is rotated, not baselined), the
+          # JSON between the markers is the content of .gitleaks-baseline.json.
+          echo "::group::gitleaks findings (redacted)"
+          jq -r '.[] | "\(.RuleID) \(.File):\(.StartLine) commit \(.Commit[0:8])"' "$report"
+          echo "-----BEGIN GITLEAKS REPORT-----"
+          jq -c . "$report"
+          echo "-----END GITLEAKS REPORT-----"
+          echo "::endgroup::"
+          exit 1
+        fi
     - name: trivy fs
+      if: ${{ !cancelled() }}
       shell: bash
       env:
         TRIVY_VERSION: 0.76.2
@@ -38,6 +50,7 @@ runs:
         [ -f .trivyignore ] && args+=(--ignorefile .trivyignore)
         "$RUNNER_TEMP/trivy/trivy" "${args[@]}" .
     - name: semgrep
+      if: ${{ !cancelled() }}
       shell: bash
       env:
         SEMGREP_VERSION: 1.186.0
@@ -51,6 +64,7 @@ runs:
         "$RUNNER_TEMP/semgrep/bin/semgrep" scan --config p/default --error --metrics=off --quiet --exclude node_modules \
           --exclude-rule package_managers.npm.npm-missing-minimum-release-age.npm-missing-minimum-release-age
     - name: zizmor
+      if: ${{ !cancelled() }}
       shell: bash
       env:
         ZIZMOR_VERSION: 1.32.0
