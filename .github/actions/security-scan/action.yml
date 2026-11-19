@@ -3,7 +3,7 @@
 #   .gitleaks-baseline.json   gitleaks findings accepted today (each is reviewed, never a live secret)
 #   .gitleaks.toml            optional gitleaks rules/allowlist
 #   .trivyignore              trivy ids with a reason comment on the line above
-#   .semgrepignore            paths semgrep skips (with a reason comment)
+#   inline `nosemgrep: <rule-id> -- reason` comments for accepted semgrep findings
 #   .github/zizmor.yml        zizmor rule config (ignores need a reason comment)
 name: releaseready security scan
 description: Run gitleaks, trivy fs, semgrep and zizmor. Fails on any finding not in the repo's baseline.
@@ -45,7 +45,11 @@ runs:
         set -euo pipefail
         python3 -m venv "$RUNNER_TEMP/semgrep"
         "$RUNNER_TEMP/semgrep/bin/pip" install --quiet "semgrep==${SEMGREP_VERSION}"
-        "$RUNNER_TEMP/semgrep/bin/semgrep" scan --config p/default --error --metrics=off --quiet --exclude node_modules
+        # One rule is excluded, for this reason: npm-missing-minimum-release-age wants `min-release-age = 7` in .npmrc,
+        # which needs npm >= 11.10 (we pin 11.4.2) and would block our own @releaseready packages for 7 days after
+        # each release. Versions are pinned by the lockfile and Renovate. Revisit when npm is upgraded.
+        "$RUNNER_TEMP/semgrep/bin/semgrep" scan --config p/default --error --metrics=off --quiet --exclude node_modules \
+          --exclude-rule package_managers.npm.npm-missing-minimum-release-age.npm-missing-minimum-release-age
     - name: zizmor
       shell: bash
       env:
