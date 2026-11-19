@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Skill: the repo `universal-appium2-framework` is now `universal-appium-framework` (UA2-22). Consumers get the new text on the next release and `releaseready-guardrails sync`.
+
 ## 2.1.0 (2026-11-19)
 
 - New composite action `.github/actions/security-scan`: gitleaks, trivy fs, semgrep and zizmor, each version pinned
