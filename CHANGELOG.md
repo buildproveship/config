@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 2.2.0 (2026-11-19)
+
+- `security-scan` action also runs on macOS arm64 (self-hosted runner): darwin-arm64 gitleaks, trivy and zizmor with their own pinned SHA-256s,
+  chosen by `runner.os` and `runner.arch`; any other platform fails clearly. Linux x64 behaviour is unchanged. The runner needs python3 (semgrep venv).
+
 - Skill: the repo `universal-appium2-framework` is now `universal-appium-framework` (UA2-22). Consumers get the new text on the next release and `releaseready-guardrails sync`.
 
 ## 2.1.0 (2026-11-19)
