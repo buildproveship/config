@@ -23,7 +23,18 @@ runs:
         args=(git --redact --no-banner --exit-code 1)
         [ -f .gitleaks-baseline.json ] && args+=(--baseline-path .gitleaks-baseline.json)
         [ -f .gitleaks.toml ] && args+=(--config .gitleaks.toml)
-        "$RUNNER_TEMP/gitleaks/gitleaks" "${args[@]}" .
+        report="$RUNNER_TEMP/gitleaks-report.json"
+        if ! "$RUNNER_TEMP/gitleaks/gitleaks" "${args[@]}" --report-format json --report-path "$report" .; then
+          # The report is redacted. After reviewing every entry (a live secret is rotated, not baselined), the
+          # JSON between the markers is the content of .gitleaks-baseline.json.
+          echo "::group::gitleaks findings (redacted)"
+          jq -r '.[] | "\(.RuleID) \(.File):\(.StartLine) commit \(.Commit[0:8])"' "$report"
+          echo "-----BEGIN GITLEAKS REPORT-----"
+          jq -c . "$report"
+          echo "-----END GITLEAKS REPORT-----"
+          echo "::endgroup::"
+          exit 1
+        fi
     - name: trivy fs
       shell: bash
       env:
