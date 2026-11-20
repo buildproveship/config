@@ -703,6 +703,21 @@ const defaultGeneratedGlobs = [
 ];
 
 /**
+ * Lines in a source file, counting every line terminator the file's language recognises: CRLF, CR and LF everywhere,
+ * plus U+2028 and U+2029 in JavaScript and TypeScript. A final terminator does not start a new line.
+ *
+ * @param {string} path
+ * @param {string} text
+ */
+function countSourceLines(path, text) {
+  if (text === "") return 0;
+  const js = /\.[cm]?[jt]sx?$/.test(path);
+  const terminator = js ? /\r\n|[\n\r\u2028\u2029]/ : /\r\n|[\n\r]/;
+  const trailing = js ? /(?:\r\n|[\n\r\u2028\u2029])$/ : /(?:\r\n|[\n\r])$/;
+  return text.replace(trailing, "").split(terminator).length;
+}
+
+/**
  * Nov 2026 review: files over ~1,000 lines mix responsibilities and defeat review. Generated files do not count.
  *
  * @type {Rule}
@@ -722,7 +737,7 @@ function oversizedSourceFile(repo, config) {
       !matches(p, skillCopies),
   )) {
     const text = repo.read(path);
-    const lines = text === "" ? 0 : text.replace(/\n$/, "").split("\n").length;
+    const lines = countSourceLines(path, text);
     if (lines > maxLines) {
       findings.push({
         rule: "oversized-source-file",

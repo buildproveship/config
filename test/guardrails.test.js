@@ -391,6 +391,28 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
+  test("oversized-source-file: CR, CRLF, U+2028 and U+2029 count as line breaks (Copilot review, PR #21)", async () => {
+    const lines = (/** @type {number} */ n, /** @type {string} */ eol) =>
+      `x;${eol}`.repeat(n);
+    const hits = await rulesHit({
+      "src/cr.js": lines(1001, "\r"),
+      "src/crlf.ts": lines(1001, "\r\n"),
+      "src/ls.js": lines(1001, "\u2028"),
+      "src/ps.mjs": lines(1001, "\u2029"),
+      "src/cr.py": lines(1001, "\r"),
+      "src/crlf-ok.ts": lines(1000, "\r\n"),
+      // U+2028 is not a line break in Python, so this file is one long line.
+      "src/ls.py": lines(1001, "\u2028"),
+    });
+    assert.deepEqual(hits.sort(), [
+      "oversized-source-file src/cr.js:1001",
+      "oversized-source-file src/cr.py:1001",
+      "oversized-source-file src/crlf.ts:1001",
+      "oversized-source-file src/ls.js:1001",
+      "oversized-source-file src/ps.mjs:1001",
+    ]);
+  });
+
   test("oversized-source-file: the limit is configurable", async () => {
     const hits = await rulesHit({
       "src/a.ts": "x;\n".repeat(51),
