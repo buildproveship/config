@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `releaseready-guardrails`: new rule `hand-written-archive-parser` (raw inflate from `node:zlib` or a ZIP local-file-header signature in source), the permanent guard for RR-08. A new error-level rule, so a major release. Measured against `origin/main` of every consumer repo: 0 findings, except ReleaseReady (1, the RR-08 reader, removed by ReleaseReady PR 369).
+
 ## 2.3.0 (2026-11-20)
 
 - `releaseready-guardrails`: new rules `runtime-assert` (a Python `assert` outside tests) and `hardcoded-tmp` (a literal `"/tmp"` in non-test source), from the SonarCloud findings on ai-orchestrator. Measured against `origin/main` of every consumer repo: 0 findings.

@@ -36,6 +36,18 @@
       "reason": "The tests feed a deliberate jwtVerify call to the copied-jwt-verifier rule"
     },
     {
+      "rule": "hand-written-archive-parser",
+      "path": "test/guardrails.test.js",
+      "max": 1,
+      "reason": "The tests feed a deliberate raw inflate and ZIP signature to the hand-written-archive-parser rule"
+    },
+    {
+      "rule": "hand-written-archive-parser",
+      "path": "guardrails/rules.js",
+      "max": 1,
+      "reason": "The rule's own pattern contains the ZIP signature it detects"
+    },
+    {
       "rule": "copied-wcag-contrast",
       "path": "test/guardrails.test.js",
       "max": 1,
