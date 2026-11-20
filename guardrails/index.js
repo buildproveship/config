@@ -30,6 +30,7 @@ const jscpdFormats = "javascript,typescript,jsx,tsx,python";
  * @property {AllowEntry[]} [allow]
  * @property {{ threshold?: number; reason?: string; paths?: string[]; ignore?: string[] }} [jscpd]
  * @property {{ enabled?: boolean; reason?: string; args?: string[] }} [knip]
+ * @property {{ maxLines?: number; reason?: string; generated?: { path: string; reason: string }[] }} [fileLength]
  */
 
 /**
@@ -250,10 +251,14 @@ function runJscpd(root, config) {
  * Every static finding in `root`, before the allowlist.
  *
  * @param {string} root
+ * @param {GuardrailsConfig} [config] the repo's releaseready-guardrails.json, read when not given
  */
-export async function findAll(root) {
+export async function findAll(root, config = loadConfig(root)) {
   const repo = repoFiles(root);
-  return [...rules.flatMap((rule) => rule(repo)), ...(await skillDrift(repo))];
+  return [
+    ...rules.flatMap((rule) => rule(repo, config)),
+    ...(await skillDrift(repo)),
+  ];
 }
 
 /**
@@ -264,7 +269,7 @@ export async function findAll(root) {
  */
 export async function check(root, options = {}) {
   const config = loadConfig(root);
-  const findings = await findAll(root);
+  const findings = await findAll(root, config);
   const { reported, allowed } = applyAllowlist(findings, config.allow ?? []);
   for (const f of reported) {
     console.log(
