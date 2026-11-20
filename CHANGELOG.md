@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.2.4 (2026-11-20)
+
+- Renovate preset, to keep CI minutes low (owner: "keep the cost to minimum"): every non-major update, of any dependency type, now goes into one weekly PR per repo; major updates wait on the Dependency Dashboard for the owner's approval; at most 2 Renovate PRs are open at once. Security alerts still open immediately.
+
 ## 2.2.3 (2026-11-20)
 
 - `releaseready-guardrails`: new rule `tracked-ds-store` fails when any `.DS_Store` is in the git index (`git ls-files`, any depth); untracked or ignored ones pass. macOS rewrites a tracked `.DS_Store` and dirties every checkout. Released as a patch on the owner's instruction. Measured against `origin/main` of every consumer repo: 0 findings except ReleaseReady and observability (1 each, being removed in their own PRs) and this repo (1, removed in its own PR).
