@@ -171,6 +171,54 @@ describe("releaseready-guardrails rules", () => {
     assert.deepEqual(hits, []);
   });
 
+  test("unpublished-internal-dependency: nested '.' overrides and internal alias keys are not missed (Copilot review, PR #20)", async () => {
+    const hits = await rulesHit({
+      "package.json": JSON.stringify(
+        {
+          dependencies: { "@releaseready/k": "npm:external@../external/dist" },
+          overrides: { "@releaseready/n": { ".": "../n/dist" } },
+        },
+        null,
+        2,
+      ),
+    });
+    assert.deepEqual(
+      hits.filter((h) => h.startsWith("unpublished-internal-dependency")),
+      [
+        "unpublished-internal-dependency package.json:3",
+        "unpublished-internal-dependency package.json:6",
+      ],
+    );
+  });
+
+  test("unpublished-internal-dependency: lockfile links resolve from the lockfile's folder (Copilot review, PR #20)", async () => {
+    const hits = await rulesHit({
+      // A nested lockfile linking a sibling workspace member stays inside the repository and passes.
+      "packages/a/package-lock.json": JSON.stringify({
+        packages: {
+          "node_modules/@releaseready/b": { resolved: "../b", link: true },
+        },
+      }),
+      // A root lockfile link that normalises outside the repository is reported.
+      "package-lock.json": JSON.stringify(
+        {
+          packages: {
+            "node_modules/@releaseready/out": {
+              resolved: "packages/../../outside",
+              link: true,
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    });
+    assert.deepEqual(
+      hits.filter((h) => h.startsWith("unpublished-internal-dependency")),
+      ["unpublished-internal-dependency package-lock.json:3"],
+    );
+  });
+
   test("tsconfig: paths into dist or node_modules, strictness turned off", async () => {
     const hits = await rulesHit({
       "tsconfig.json": `{
