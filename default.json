@@ -11,7 +11,7 @@
   "timezone": "Asia/Hong_Kong",
   "schedule": ["before 6am on monday"],
   "minimumReleaseAge": "3 days",
-  "prConcurrentLimit": 5,
+  "prConcurrentLimit": 2,
   "prHourlyLimit": 2,
   "rangeStrategy": "pin",
   "labels": ["dependencies"],
@@ -31,10 +31,9 @@
   },
   "packageRules": [
     {
-      "description": "One PR a week for every non-major update of tooling and dev dependencies.",
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["minor", "patch", "digest", "pin"],
-      "groupName": "dev dependencies (non-major)"
+      "description": "Cost: one PR a week per repo for every non-major update (all dependency types).",
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "all non-major dependencies"
     },
     {
       "description": "One PR for GitHub Actions digest and version updates.",
@@ -70,5 +69,8 @@
       "matchDepNames": ["node"],
       "groupName": "Node.js runtime"
     }
-  ]
+  ],
+  "major": {
+    "dependencyDashboardApproval": true
+  }
 }
