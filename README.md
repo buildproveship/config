@@ -141,3 +141,7 @@ through `npx` for the language-neutral rules (legacy markers, README history, sk
 Bump `version` in `package.json`, add a `CHANGELOG.md` entry, merge, then push a tag `vX.Y.Z` on `main`. The Release
 workflow checks that the tag matches `package.json`, runs `npm run check` and publishes with the workflow's
 `GITHUB_TOKEN`. Use semver: a new error-level rule is a major release.
+
+## Licence
+
+Apache-2.0. See [LICENSE](LICENSE).

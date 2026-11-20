@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Licensed under Apache-2.0 (`LICENSE`, `package.json`); previously `UNLICENSED`. Owner decision, 20 Nov 2026.
+
 ## 2.3.0 (2026-11-20)
 
 - `releaseready-guardrails`: new rules `runtime-assert` (a Python `assert` outside tests) and `hardcoded-tmp` (a literal `"/tmp"` in non-test source), from the SonarCloud findings on ai-orchestrator. Measured against `origin/main` of every consumer repo: 0 findings.
