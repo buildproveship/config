@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `releaseready-guardrails`: new rule `hand-written-archive-parser` (raw inflate from `node:zlib` or a ZIP local-file-header signature in source), the permanent guard for RR-08. A new error-level rule, so a major release. Measured against `origin/main` of every consumer repo: 0 findings, except ReleaseReady (1, the RR-08 reader, removed by ReleaseReady PR 369).
+- Licensed under Apache-2.0 (`LICENSE`, `package.json`); previously `UNLICENSED`. Owner decision, 20 Nov 2026.
 
 ## 2.3.0 (2026-11-20)
 
