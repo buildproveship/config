@@ -400,6 +400,41 @@ function copiedCode(repo) {
   return findings;
 }
 
+const pythonTestGlobs = [
+  "**/test_*.py",
+  "**/*_test.py",
+  "**/{test,tests,task-system-tests}/**/*.py",
+];
+
+/**
+ * Scanner findings (SonarCloud review of ai-orchestrator, 20 Nov 2026): patterns an agent keeps reintroducing.
+ * `assert` vanishes under `python -O` and is not error handling; a literal `/tmp` is a publicly writable directory.
+ *
+ * @type {Rule}
+ */
+function scannerPatterns(repo) {
+  const notTest = (/** @type {Finding} */ f) =>
+    !matches(f.path, testGlobs) && !matches(f.path, pythonTestGlobs);
+  return [
+    ...scanLines(repo, "**/*.py", [
+      {
+        rule: "runtime-assert",
+        pattern: /^\s*assert\s/,
+        message:
+          "assert is not a runtime check (removed by python -O): `if not cond: raise SomeError(...)`",
+      },
+    ]),
+    ...scanLines(repo, sourceGlob, [
+      {
+        rule: "hardcoded-tmp",
+        pattern: /["']\/tmp(?:\/[^"']*)?["']/,
+        message:
+          "literal /tmp is publicly writable: use a private directory from tempfile.mkdtemp / fs.mkdtemp (or /var/empty when nothing is written)",
+      },
+    ]),
+  ].filter(notTest);
+}
+
 /**
  * Standard 1: RR-03, RR-04, TM-11, TM-12, UPF-01, UPF-02, FUI-17. Deprecated, legacy and compatibility code.
  *
@@ -526,6 +561,7 @@ export const rules = [
   buildInDependency,
   copiedCode,
   legacyMarkers,
+  scannerPatterns,
   skippedTests,
   eslintConfigOverrides,
   readmeHistory,

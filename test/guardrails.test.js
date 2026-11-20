@@ -180,6 +180,21 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
+  test("scanner patterns: runtime assert and literal /tmp outside tests", async () => {
+    const hits = await rulesHit({
+      "control/run.py":
+        'import os\nassert os.path.isabs(p), "bad"\nenv = {"TMPDIR": "/tmp"}\nok = os.environ.get("A", "/var/empty")\n',
+      "control/test_run.py": "assert 1 == 1\nx = '/tmp/x'\n",
+      "src/tmp.ts": 'export const dir = "/tmp/cache";\n',
+      "tests/tmp.test.ts": 'export const dir = "/tmp/cache";\n',
+    });
+    assert.deepEqual(hits.sort(), [
+      "hardcoded-tmp control/run.py:3",
+      "hardcoded-tmp src/tmp.ts:1",
+      "runtime-assert control/run.py:2",
+    ]);
+  });
+
   test("readme-dated-history: dated headings, status lines and ticket headings", async () => {
     const hits = await rulesHit({
       "README.md":

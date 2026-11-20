@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 2.3.0 (2026-11-20)
+
+- `releaseready-guardrails`: new rules `runtime-assert` (a Python `assert` outside tests) and `hardcoded-tmp` (a literal `"/tmp"` in non-test source), from the SonarCloud findings on ai-orchestrator. Measured against `origin/main` of every consumer repo: 0 findings.
+- `releaseready-code-quality` skill: new rule 9, "every finding gets a permanent guard" (a lint or guardrail rule, then a test, then a skill row, in the same PR as the fix), with the known scanner patterns and four new smell rows. SonarCloud is not used for private repos any more (free plan limit); semgrep in `security-scan` is the shared scanner.
+
 ## 2.2.4 (2026-11-20)
 
 - Renovate preset, to keep CI minutes low (owner: "keep the cost to minimum"): every non-major update, of any dependency type, now goes into one weekly PR per repo; major updates wait on the Dependency Dashboard for the owner's approval; at most 2 Renovate PRs are open at once. Security alerts still open immediately.
