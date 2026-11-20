@@ -5,7 +5,7 @@
 ## 2.3.0 (2026-11-20)
 
 - `releaseready-guardrails`: new rules `runtime-assert` (a Python `assert` outside tests) and `hardcoded-tmp` (a literal `"/tmp"` in non-test source), from the SonarCloud findings on ai-orchestrator. Measured against `origin/main` of every consumer repo: 0 findings.
-- `releaseready-code-quality` skill: new rule 9, "every finding gets a permanent guard" (a lint or guardrail rule, then a test, then a skill row, in the same PR as the fix), with the known scanner patterns and four new smell rows. SonarCloud is not used for private repos any more (free plan limit); semgrep in `security-scan` is the shared scanner.
+- `releaseready-code-quality` skill: new rule 9, "every finding gets a permanent guard" (a lint or guardrail rule, then a test, then a skill row, in the same PR as the fix), with the known scanner patterns and four new smell rows. SonarCloud stays on its Free plan for the repos it already covers (main branch only, scope reduced under 50k private lines); semgrep in `security-scan` is the shared scanner for every repo.
 
 ## 2.2.4 (2026-11-20)
 
