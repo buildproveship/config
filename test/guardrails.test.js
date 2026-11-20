@@ -129,7 +129,7 @@ describe("releaseready-guardrails rules", () => {
       "src/contrast.ts": "const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;\n",
       "src/fine.ts": "const canonicalPath = realpathSync(p);\n",
       "src/zip.ts":
-        'import { inflateRawSync } from "node:zlib";\nconst data = inflateRawSync(raw);\nconst sig = 0x04034b50;\n',
+        'import { inflateRawSync } from "node:zlib";\nconst data = inflateRawSync(raw);\nconst sig = 0x04034b50;\nconst hex = "\\x50\\x4b\\x03\\x04";\nconst pk = b"PK\\x03\\x04";\n',
       "src/gzip.ts": "const out = gunzipSync(buf);\n",
     });
     assert.deepEqual(hits.sort(), [
@@ -139,6 +139,8 @@ describe("releaseready-guardrails rules", () => {
       "copied-wcag-contrast src/contrast.ts:1",
       "hand-written-archive-parser src/zip.ts:2",
       "hand-written-archive-parser src/zip.ts:3",
+      "hand-written-archive-parser src/zip.ts:4",
+      "hand-written-archive-parser src/zip.ts:5",
     ]);
   });
 

@@ -361,7 +361,7 @@ function copiedCode(repo) {
     {
       rule: "hand-written-archive-parser",
       pattern:
-        /\b(?:inflateRaw(?:Sync)?|createInflateRaw)\s*\(|\b0x0?(?:4034b50|8074b50)\b|\\x50\\x4b\\x03\\x04/i,
+        /\b(?:inflateRaw(?:Sync)?|createInflateRaw)\s*\(|\b0x0?(?:4034b50|8074b50)\b|(?:\\x50\\x4b|PK)\\x03\\x04/i,
       message:
         "hand-written ZIP parsing (raw inflate or a local-file-header signature): use a maintained library such as fflate or yauzl",
     },
