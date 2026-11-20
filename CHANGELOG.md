@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `releaseready-guardrails` (RRDSCRUM-434): new rules `unpublished-internal-dependency` (`@releaseready/*` from git, a tarball, or a local or `dist/` folder where `dependency-source` does not look: `npm:` aliases, `overrides`, lockfile links outside the repo and release-tarball `resolved` URLs) and `tracked-build-output` (a tracked `dist/` or `build/` folder). `tracked-ds-store` can now be allowlisted with a reason like every other rule. New error-level rules, so a major release.
 - `releaseready-guardrails`: new rule `hand-written-archive-parser` (raw inflate from `node:zlib` or a ZIP local-file-header signature in source), the permanent guard for RR-08. A new error-level rule, so a major release. Measured against `origin/main` of every consumer repo: 0 findings, except ReleaseReady (1, the RR-08 reader, removed by ReleaseReady PR 369).
 - Licensed under Apache-2.0 (`LICENSE`, `package.json`); previously `UNLICENSED`. Owner decision, 20 Nov 2026.
 

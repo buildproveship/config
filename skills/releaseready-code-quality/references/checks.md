@@ -24,6 +24,7 @@ vulture and pip-audit.
 | Rule                             | Fails on                                                                                                         | Findings                      |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | `dependency-source`              | git/GitHub/SHA/tarball/URL/`file:`/`link:` specs in any package.json or lockfile; `@releaseready/*` not `^x.y.z` | RR-15, TDM-12, UPF-16, FUI-04 |
+| `unpublished-internal-dependency` | `@releaseready/*` from git, a tarball, or a local or `dist/` folder through an `npm:` alias or `overrides`; a lockfile link outside the repo or a release-tarball `resolved` | Nov 2026 review |
 | `tsconfig-private-path`          | tsconfig/jsconfig `paths` targets in `dist/` or `node_modules`                                                   | RR-14, RPT-08, UPF-14         |
 | `tsconfig-not-strict`            | `strict`, `noImplicitAny`, `strictNullChecks` … set to `false`                                                   | standard 2                    |
 | `build-in-node-modules`          | scripts with `--prefix node_modules/…`, `cd node_modules`, `tsc -p node_modules/…`                               | TDM-11, RPT-15                |
@@ -38,6 +39,7 @@ vulture and pip-audit.
 | `skipped-test`                   | `.skip(`, `.todo(`, `xit(`, `{ skip: true }` in test files                                                       | standard 2                    |
 | `eslint-rule-off-without-reason` | a rule set to `off`/`warn`/`0` in eslint.config without a comment on it or above its group                       | UPF-03, UA2-06                |
 | `tracked-ds-store`               | a `.DS_Store` in the git index (`git ls-files`), at any depth; untracked or ignored ones pass                    | standard 7                    |
+| `tracked-build-output` | a tracked `dist/` or `build/` folder at any depth (one finding per folder, from `git ls-files`) | Nov 2026 review |
 | `readme-dated-history`           | README headings with a date or a ticket key; "Status as of <date>" lines                                         | TDM-20, RPT-17, OBS-17        |
 | `skill-drift`                    | this skill differs from the published copy; AGENTS.md/CLAUDE.md missing or not pointing here                     | UA2-21                        |
 | `unused-allow`                   | an allowlist entry that matches nothing, or whose `max` is higher than today's count                             | —                             |

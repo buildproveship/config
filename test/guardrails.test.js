@@ -82,6 +82,95 @@ describe("releaseready-guardrails rules", () => {
     );
   });
 
+  test("unpublished-internal-dependency: @releaseready/* from a local or build-output folder, a link or a tarball", async () => {
+    const hits = await rulesHit({
+      "package.json": JSON.stringify(
+        {
+          dependencies: {
+            "@releaseready/a": "../a/dist",
+            "@releaseready/v": "npm:@releaseready/v@../v",
+            "rr-d": "npm:@releaseready/d@../d/dist",
+            "rr-e": "npm:@releaseready/e@github:releaseready/e",
+            "@releaseready/ok": "^1.2.0",
+            "rr-ok": "npm:@releaseready/ok@^1.2.0",
+          },
+          overrides: { "@releaseready/f": "../f/dist" },
+        },
+        null,
+        2,
+      ),
+      "package-lock.json": JSON.stringify(
+        {
+          lockfileVersion: 3,
+          packages: {
+            "node_modules/@releaseready/g": {
+              resolved: "../g/dist",
+              link: true,
+            },
+            "node_modules/@releaseready/h": {
+              resolved:
+                "https://github.com/releaseready/h/releases/download/v1.0.0/h-1.0.0.tgz",
+            },
+            "node_modules/@releaseready/ws": {
+              resolved: "packages/ws",
+              link: true,
+            },
+            "node_modules/@releaseready/reg": {
+              resolved:
+                "https://npm.pkg.github.com/download/@releaseready/reg/1.0.0/abc",
+            },
+            "node_modules/@releaseready/git": {
+              resolved: "git+ssh://git@github.com/releaseready/git.git#abc1234",
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    });
+    assert.deepEqual(
+      hits.filter((h) => h.startsWith("unpublished-internal-dependency")),
+      [
+        "unpublished-internal-dependency package.json:4",
+        "unpublished-internal-dependency package.json:5",
+        "unpublished-internal-dependency package.json:6",
+        "unpublished-internal-dependency package.json:11",
+        "unpublished-internal-dependency package-lock.json:4",
+        "unpublished-internal-dependency package-lock.json:8",
+      ],
+    );
+    // A direct non-caret @releaseready/* spec and git sources stay dependency-source's, so nothing is reported twice.
+    assert.deepEqual(
+      hits.filter((h) => h.startsWith("dependency-source")),
+      [
+        "dependency-source package.json:3",
+        "dependency-source package-lock.json:19",
+      ],
+    );
+  });
+
+  test("unpublished-internal-dependency: registry versions and workspace links pass", async () => {
+    const hits = await rulesHit({
+      "package.json": JSON.stringify({
+        workspaces: ["packages/*"],
+        dependencies: { "@releaseready/ui-web": "^0.9.0" },
+      }),
+      "package-lock.json": JSON.stringify({
+        packages: {
+          "node_modules/@releaseready/ui-web": {
+            resolved:
+              "https://npm.pkg.github.com/download/@releaseready/ui-web/0.9.0/abc",
+          },
+          "node_modules/@releaseready/ws": {
+            resolved: "packages/ws",
+            link: true,
+          },
+        },
+      }),
+    });
+    assert.deepEqual(hits, []);
+  });
+
   test("tsconfig: paths into dist or node_modules, strictness turned off", async () => {
     const hits = await rulesHit({
       "tsconfig.json": `{
@@ -245,6 +334,35 @@ describe("releaseready-guardrails rules", () => {
     );
   });
 
+  test("tracked-build-output: one finding per tracked dist/ or build/ folder, not for untracked ones", async () => {
+    const root = await repo({
+      "dist/index.js": "x",
+      "dist/types/index.d.ts": "x",
+      "packages/x/build/a.js": "x",
+      "src/builder.ts": "export const b = 1;\n",
+      "docs/build.md": "build\n",
+      "untracked/dist/a.js": "x",
+    });
+    execFileSync("git", ["add", "dist", "packages", "src", "docs"], {
+      cwd: root,
+    });
+    const hits = (await findAll(root))
+      .filter((f) => f.rule === "tracked-build-output")
+      .map((f) => `${f.path} ${f.message.split(":")[0] ?? ""}`);
+    assert.deepEqual(hits, [
+      "dist 2 tracked file(s) under dist/",
+      "packages/x/build 1 tracked file(s) under packages/x/build/",
+    ]);
+
+    execFileSync("git", ["rm", "-r", "--cached", "-q", "dist", "packages"], {
+      cwd: root,
+    });
+    assert.deepEqual(
+      (await findAll(root)).filter((f) => f.rule === "tracked-build-output"),
+      [],
+    );
+  });
+
   test("skill-drift: missing copy, edited copy, extra file and AGENTS.md without the pointer", async () => {
     const root = await repo(
       { "AGENTS.md": "No pointer here.\n" },
@@ -360,6 +478,13 @@ describe("allowlist", () => {
           },
         ],
       },
+      {
+        allow: [
+          { rule: "unpublished-internal-dependency", path: "package.json" },
+        ],
+      },
+      { allow: [{ rule: "tracked-build-output", path: "dist", reason: "" }] },
+      { allow: [{ rule: "tracked-ds-store", path: ".DS_Store" }] },
       { jscpd: { threshold: 9 } },
       { knip: { enabled: false } },
     ]) {
@@ -372,6 +497,27 @@ describe("allowlist", () => {
         JSON.stringify(config),
       );
     }
+  });
+  test("the new rules can be allowed with a reason", async () => {
+    const root = await repo({
+      "releaseready-guardrails.json": JSON.stringify({
+        allow: [
+          {
+            rule: "unpublished-internal-dependency",
+            path: "package.json",
+            reason:
+              "Example entry: the consumer and the removal ticket go here",
+          },
+          {
+            rule: "tracked-build-output",
+            path: "dist",
+            reason:
+              "Example entry: the consumer and the removal ticket go here",
+          },
+        ],
+      }),
+    });
+    assert.equal(loadConfig(root).allow?.length, 2);
   });
 });
 
