@@ -23,6 +23,7 @@
               "copied-schema-primitive",
               "copied-canonical-digest",
               "copied-jwt-verifier",
+              "hand-written-archive-parser",
               "copied-wcag-contrast",
               "legacy-marker",
               "skipped-test",

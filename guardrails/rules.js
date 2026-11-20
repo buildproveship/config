@@ -358,6 +358,13 @@ function copiedCode(repo) {
       message:
         "local JWT verification: use the verifier from @releaseready/test-management/identity/v1",
     },
+    {
+      rule: "hand-written-archive-parser",
+      pattern:
+        /\b(?:inflateRaw(?:Sync)?|createInflateRaw)\s*\(|\b0x(?:0?4034b50|0?8074b50|504b0304|504b0708)\b|(?:\\x50\\x4b|PK)\\x03\\x04/i,
+      message:
+        "hand-written ZIP parsing (raw inflate or a local-file-header signature): use a maintained library such as fflate or yauzl",
+    },
     // UUID and digest regexes are generic; they are copies only where the shared primitive is available.
     ...(usesTestManagement(repo)
       ? [

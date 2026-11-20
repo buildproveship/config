@@ -30,6 +30,7 @@ vulture and pip-audit.
 | `copied-schema-primitive`        | the reference regex anywhere; UUID and 64-hex digest regexes in repos that depend on test-management             | TM-07, TM-16, TDM-07          |
 | `copied-canonical-digest`        | a local `canonical()`, `canonicalJson`, `stableStringify` …                                                      | TM-06, TDM-21                 |
 | `copied-jwt-verifier`            | `jwtVerify`, `createRemoteJWKSet`, `jsonwebtoken`, `jwks-rsa`, PyJWT                                             | TM-18, TDM-06                 |
+| `hand-written-archive-parser`    | `inflateRaw`/`inflateRawSync` or a ZIP local-file-header signature in source (use `fflate` or `yauzl`)           | RR-08                         |
 | `copied-wcag-contrast`           | the sRGB luminance coefficients or linearisation constants                                                       | RPT-11                        |
 | `runtime-assert`                 | a Python `assert` statement outside test files (removed by `python -O`; use `if not …: raise`)                   | SonarCloud, 20 Nov 2026       |
 | `hardcoded-tmp`                  | a literal `"/tmp"` string in non-test source (publicly writable; use `mkdtemp`)                                  | SonarCloud, 20 Nov 2026       |
