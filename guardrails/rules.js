@@ -20,7 +20,9 @@ import { posix } from "node:path";
  * @property {(path: string) => string} read
  */
 
-/** @typedef {(repo: RepoFiles) => Finding[]} Rule */
+/** @typedef {import("./index.js").GuardrailsConfig} GuardrailsConfig */
+
+/** @typedef {(repo: RepoFiles, config: GuardrailsConfig) => Finding[]} Rule */
 
 const sourceGlob = "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs,py}";
 const testGlobs = [
@@ -711,6 +713,67 @@ function trackedBuildOutput(repo) {
   }));
 }
 
+/** Lines one source file may have when the repo sets no limit; a higher repo limit needs a reason. */
+const defaultMaxLines = 1000;
+
+/** Generated sources the line limit never counts; a repo adds its own in `fileLength.generated`, each with a reason. */
+const defaultGeneratedGlobs = [
+  "**/generated/**",
+  "**/__generated__/**",
+  "**/generated.*",
+  "**/*.generated.*",
+  "**/*.gen.*",
+  "**/*.min.{js,mjs,cjs}",
+];
+
+/**
+ * Lines in a source file, counting every line terminator the file's language recognises: CRLF, CR and LF everywhere,
+ * plus U+2028 and U+2029 in JavaScript and TypeScript. A final terminator does not start a new line.
+ *
+ * @param {string} path
+ * @param {string} text
+ */
+function countSourceLines(path, text) {
+  if (text === "") return 0;
+  const js = /\.[cm]?[jt]sx?$/.test(path);
+  const terminator = js ? /\r\n|[\n\r\u2028\u2029]/ : /\r\n|[\n\r]/;
+  const trailing = js ? /(?:\r\n|[\n\r\u2028\u2029])$/ : /(?:\r\n|[\n\r])$/;
+  return text.replace(trailing, "").split(terminator).length;
+}
+
+/**
+ * Nov 2026 review: files over ~1,000 lines mix responsibilities and defeat review. Generated files do not count.
+ *
+ * @type {Rule}
+ */
+function oversizedSourceFile(repo, config) {
+  const maxLines = config.fileLength?.maxLines ?? defaultMaxLines;
+  const generated = [
+    ...defaultGeneratedGlobs,
+    ...(config.fileLength?.generated ?? []).map((entry) => entry.path),
+  ];
+  /** @type {Finding[]} */
+  const findings = [];
+  for (const path of repo.paths.filter(
+    (p) =>
+      matches(p, sourceGlob) &&
+      !matches(p, generated) &&
+      !matches(p, skillCopies),
+  )) {
+    const text = repo.read(path);
+    const lines = countSourceLines(path, text);
+    if (lines > maxLines) {
+      findings.push({
+        rule: "oversized-source-file",
+        path,
+        line: maxLines + 1,
+        message: `${String(lines)} lines, over the ${String(maxLines)}-line limit: split it by responsibility (a generated file goes in fileLength.generated with a reason)`,
+      });
+    }
+  }
+  return findings;
+}
+
 /** Every static rule, in report order. */
 export const rules = [
   dependencySource,
@@ -725,4 +788,5 @@ export const rules = [
   readmeHistory,
   trackedDsStore,
   trackedBuildOutput,
+  oversizedSourceFile,
 ];

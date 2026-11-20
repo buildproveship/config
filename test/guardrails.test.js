@@ -411,6 +411,67 @@ describe("releaseready-guardrails rules", () => {
     );
   });
 
+  test("oversized-source-file: 1,000 lines pass, 1,001 fail; generated files and configured globs are excluded", async () => {
+    const lines = (/** @type {number} */ n) => "x;\n".repeat(n);
+    const hits = await rulesHit({
+      "src/under.ts": lines(1000),
+      "src/over.ts": lines(1001),
+      "src/over.py": lines(1001),
+      "src/no-final-newline.ts": lines(1000).slice(0, -1),
+      "README.md": lines(5000),
+      "apps/shared/generated/central-api.d.ts": lines(5000),
+      "src/api.generated.ts": lines(5000),
+      "src/vendor/big.ts": lines(5000),
+      "releaseready-guardrails.json": JSON.stringify({
+        fileLength: {
+          generated: [
+            {
+              path: "src/vendor/**",
+              reason: "Written by scripts/vendor.mts from the upstream schema",
+            },
+          ],
+        },
+      }),
+    });
+    assert.deepEqual(hits.sort(), [
+      "oversized-source-file src/over.py:1001",
+      "oversized-source-file src/over.ts:1001",
+    ]);
+  });
+
+  test("oversized-source-file: CR, CRLF, U+2028 and U+2029 count as line breaks (Copilot review, PR #21)", async () => {
+    const lines = (/** @type {number} */ n, /** @type {string} */ eol) =>
+      `x;${eol}`.repeat(n);
+    const hits = await rulesHit({
+      "src/cr.js": lines(1001, "\r"),
+      "src/crlf.ts": lines(1001, "\r\n"),
+      "src/ls.js": lines(1001, "\u2028"),
+      "src/ps.mjs": lines(1001, "\u2029"),
+      "src/cr.py": lines(1001, "\r"),
+      "src/crlf-ok.ts": lines(1000, "\r\n"),
+      // U+2028 is not a line break in Python, so this file is one long line.
+      "src/ls.py": lines(1001, "\u2028"),
+    });
+    assert.deepEqual(hits.sort(), [
+      "oversized-source-file src/cr.js:1001",
+      "oversized-source-file src/cr.py:1001",
+      "oversized-source-file src/crlf.ts:1001",
+      "oversized-source-file src/ls.js:1001",
+      "oversized-source-file src/ps.mjs:1001",
+    ]);
+  });
+
+  test("oversized-source-file: the limit is configurable", async () => {
+    const hits = await rulesHit({
+      "src/a.ts": "x;\n".repeat(51),
+      "src/b.ts": "x;\n".repeat(50),
+      "releaseready-guardrails.json": JSON.stringify({
+        fileLength: { maxLines: 50 },
+      }),
+    });
+    assert.deepEqual(hits, ["oversized-source-file src/a.ts:51"]);
+  });
+
   test("skill-drift: missing copy, edited copy, extra file and AGENTS.md without the pointer", async () => {
     const root = await repo(
       { "AGENTS.md": "No pointer here.\n" },
@@ -533,6 +594,14 @@ describe("allowlist", () => {
       },
       { allow: [{ rule: "tracked-build-output", path: "dist", reason: "" }] },
       { allow: [{ rule: "tracked-ds-store", path: ".DS_Store" }] },
+      { allow: [{ rule: "oversized-source-file", path: "src/big.ts" }] },
+      { fileLength: { maxLines: 1500 } },
+      { fileLength: { generated: [{ path: "src/gen/**" }] } },
+      {
+        fileLength: {
+          generated: [{ path: "src/gen/**", reason: "TODO say why later" }],
+        },
+      },
       { jscpd: { threshold: 9 } },
       { knip: { enabled: false } },
     ]) {
@@ -566,6 +635,35 @@ describe("allowlist", () => {
       }),
     });
     assert.equal(loadConfig(root).allow?.length, 2);
+  });
+
+  test("an oversized file can be allowed with a reason, and a higher limit with a reason", async () => {
+    const root = await repo({
+      "src/big.ts": "x;\n".repeat(1001),
+      "releaseready-guardrails.json": JSON.stringify({
+        allow: [
+          {
+            rule: "oversized-source-file",
+            path: "src/big.ts",
+            reason: "Being split by RRDSCRUM-999; the count may only fall",
+          },
+        ],
+      }),
+    });
+    const { reported } = applyAllowlist(
+      await findAll(root),
+      loadConfig(root).allow ?? [],
+    );
+    assert.deepEqual(reported, []);
+    const raised = await repo({
+      "releaseready-guardrails.json": JSON.stringify({
+        fileLength: {
+          maxLines: 1200,
+          reason: "Measured 1,180 lines in the parser on 20 Nov 2026",
+        },
+      }),
+    });
+    assert.equal(loadConfig(raised).fileLength?.maxLines, 1200);
   });
 });
 

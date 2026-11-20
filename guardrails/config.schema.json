@@ -31,7 +31,8 @@
               "eslint-rule-off-without-reason",
               "readme-dated-history",
               "tracked-ds-store",
-              "tracked-build-output"
+              "tracked-build-output",
+              "oversized-source-file"
             ]
           },
           "path": { "type": "string", "minLength": 1 },
@@ -64,6 +65,40 @@
         "required": ["threshold"],
         "properties": {
           "threshold": { "type": "number", "exclusiveMinimum": 3 }
+        }
+      },
+      "then": { "required": ["reason"] }
+    },
+    "fileLength": {
+      "description": "oversized-source-file settings. A limit above 1000 lines needs a reason; every generated-file glob names why the file is generated.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxLines": { "type": "integer", "minimum": 1 },
+        "reason": { "type": "string", "minLength": 20 },
+        "generated": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "reason"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "reason": {
+                "type": "string",
+                "minLength": 20,
+                "not": {
+                  "pattern": "^(TODO|[Tt]odo|TBD|[Pp]re-?existing|[Bb]aseline)\\b"
+                }
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "required": ["maxLines"],
+        "properties": {
+          "maxLines": { "type": "integer", "exclusiveMinimum": 1000 }
         }
       },
       "then": { "required": ["reason"] }
