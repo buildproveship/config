@@ -17,6 +17,7 @@
           "rule": {
             "enum": [
               "dependency-source",
+              "unpublished-internal-dependency",
               "tsconfig-private-path",
               "tsconfig-not-strict",
               "build-in-node-modules",
@@ -28,7 +29,9 @@
               "legacy-marker",
               "skipped-test",
               "eslint-rule-off-without-reason",
-              "readme-dated-history"
+              "readme-dated-history",
+              "tracked-ds-store",
+              "tracked-build-output"
             ]
           },
           "path": { "type": "string", "minLength": 1 },

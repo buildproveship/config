@@ -2,6 +2,7 @@
 // (skill/releaseready-code-quality/SKILL.md) explains the fix. Every rule is a pure function of the repo's files.
 import { parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
 import { minimatch } from "minimatch";
+import { posix } from "node:path";
 
 /**
  * @typedef {object} Finding
@@ -214,6 +215,125 @@ function dependencySource(repo) {
           });
         }
       });
+  }
+  return findings;
+}
+
+const internalScope = "@releaseready/";
+
+/** Local folder specs (`../x`, `./x`, `/x`, `~/x`) and specs that point into build output (`…/dist`, `…/build`). */
+const localOrBuildSpec = [
+  /^(?:\.{1,2}|~)?\//,
+  /(?:^|\/)(?:dist|build)(?:\/|$)/,
+];
+
+/** Lockfile `resolved` hosts that serve release or source tarballs, not a package registry. */
+const tarballHosts =
+  /^https:\/\/(?:github\.com|codeload\.github\.com|raw\.githubusercontent\.com|objects\.githubusercontent\.com)\//;
+
+/**
+ * The package an `npm:` alias installs and the spec it installs it at, or the key and spec themselves.
+ *
+ * @param {string} name
+ * @param {string} spec
+ */
+function aliasTarget(name, spec) {
+  const alias = /^npm:((?:@[^/@]+\/)?[^@]+)@(.+)$/.exec(spec);
+  return alias
+    ? { name: alias[1] ?? name, spec: alias[2] ?? "" }
+    : { name, spec };
+}
+
+/**
+ * Whether a lockfile `link: true` target, resolved against the lockfile's own folder, leaves the repository or points
+ * into a dist/ or build/ folder. Links to workspace members inside the repository pass.
+ *
+ * @param {string} lockfilePath repository-relative path of the lockfile
+ * @param {string} resolved the entry's `resolved` value
+ */
+function linkLeavesRepoOrIsBuildOutput(lockfilePath, resolved) {
+  if (resolved.startsWith("/") || resolved.startsWith("~")) return true;
+  const target = posix.normalize(
+    posix.join(posix.dirname(lockfilePath), resolved),
+  );
+  return (
+    target === ".." ||
+    target.startsWith("../") ||
+    /(?:^|\/)(?:dist|build)(?:\/|$)/.test(target)
+  );
+}
+
+/**
+ * Nov 2026 review: `@releaseready/*` installed from somewhere other than the registry, in the places
+ * `dependency-source` does not look: an `npm:` alias, an `overrides` entry, and lockfile entries that link a local or
+ * build-output folder or resolve to a release tarball. Specs `dependency-source` reports are not reported twice.
+ *
+ * @type {Rule}
+ */
+function unpublishedInternalDependency(repo) {
+  /** @type {Finding[]} */
+  const findings = [];
+  for (const path of repo.paths.filter((p) => matches(p, "**/package.json"))) {
+    const pkg = readJsonc(repo, path);
+    if (!isRecord(pkg)) continue;
+    for (const field of dependencyFields) {
+      for (const [trail, spec] of specs(pkg[field], [])) {
+        // A nested override keyed "." overrides its parent selector, so the parent is the package's identity.
+        const leaf = trail.at(-1) ?? "";
+        const key = leaf === "." ? (trail.at(-2) ?? "") : leaf;
+        const target = aliasTarget(key, spec);
+        // Either side of an alias can name the internal package: "@releaseready/a": "npm:external@..." too.
+        const internalName = key.startsWith(internalScope) ? key : target.name;
+        // dependency-source reports every non-registry spec, and every non-caret @releaseready/* key outside overrides.
+        const reportedElsewhere =
+          nonRegistrySpec.some((re) => re.test(spec)) ||
+          (key.startsWith(internalScope) &&
+            field !== "overrides" &&
+            !spec.startsWith("npm:"));
+        if (
+          internalName.startsWith(internalScope) &&
+          !reportedElsewhere &&
+          [...nonRegistrySpec, ...localOrBuildSpec].some((re) =>
+            re.test(target.spec),
+          )
+        ) {
+          findings.push({
+            rule: "unpublished-internal-dependency",
+            path,
+            line: lineOf(repo, path, `"${key}"`),
+            message: `${field}.${trail.join(".")} is "${spec}": install ${internalName} from the registry as ^x.y.z, not from git, a tarball, or a local or build-output folder`,
+            text: `${key}: ${spec}`,
+          });
+        }
+      }
+    }
+  }
+  for (const path of repo.paths.filter((p) =>
+    matches(p, "**/package-lock.json"),
+  )) {
+    const lock = readJsonc(repo, path);
+    const packages = isRecord(lock) ? lock.packages : undefined;
+    if (!isRecord(packages)) continue;
+    for (const [key, entry] of Object.entries(packages)) {
+      if (!/(?:^|\/)node_modules\/@releaseready\/[^/]+$/.test(key)) continue;
+      if (!isRecord(entry) || typeof entry.resolved !== "string") continue;
+      const resolved = entry.resolved;
+      // A link inside the repo is a workspace member; dependency-source already reports git and file: sources.
+      const bad =
+        entry.link === true
+          ? linkLeavesRepoOrIsBuildOutput(path, resolved)
+          : !/^(?:git\+|git:|file:|https?:\/\/codeload)/.test(resolved) &&
+            (!resolved.startsWith("https://") || tarballHosts.test(resolved));
+      if (bad) {
+        findings.push({
+          rule: "unpublished-internal-dependency",
+          path,
+          line: lineOf(repo, path, `"${key}"`),
+          message: `${key} resolves to "${resolved}": install it from the registry, not a ${entry.link === true ? "linked local folder" : "release tarball or local file"}`,
+          text: `${key}: ${resolved}`,
+        });
+      }
+    }
   }
   return findings;
 }
@@ -561,9 +681,40 @@ function trackedDsStore(repo) {
     }));
 }
 
+const buildOutputDirs = new Set(["dist", "build"]);
+
+/**
+ * Nov 2026 review: committed build output goes stale against its source and hides what was really released. One
+ * finding per tracked `dist/` or `build/` folder (the outermost one), from the git index like `tracked-ds-store`.
+ *
+ * @type {Rule}
+ */
+function trackedBuildOutput(repo) {
+  /** @type {Map<string, number>} */
+  const folders = new Map();
+  for (const path of repo.tracked) {
+    const parts = path.split("/");
+    const index = parts.findIndex(
+      (part, i) => i < parts.length - 1 && buildOutputDirs.has(part),
+    );
+    if (index === -1 || parts.slice(0, index).includes("node_modules"))
+      continue;
+    const folder = parts.slice(0, index + 1).join("/");
+    folders.set(folder, (folders.get(folder) ?? 0) + 1);
+  }
+  return [...folders].map(([folder, count]) => ({
+    rule: "tracked-build-output",
+    path: folder,
+    line: 0,
+    message: `${String(count)} tracked file(s) under ${folder}/: build output comes from the build, so run \`git rm -r --cached ${folder}\` and add it to .gitignore`,
+    text: folder,
+  }));
+}
+
 /** Every static rule, in report order. */
 export const rules = [
   dependencySource,
+  unpublishedInternalDependency,
   tsconfig,
   buildInDependency,
   copiedCode,
@@ -573,4 +724,5 @@ export const rules = [
   eslintConfigOverrides,
   readmeHistory,
   trackedDsStore,
+  trackedBuildOutput,
 ];
