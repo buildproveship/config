@@ -340,6 +340,63 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
+  test("hardcoded-tmp: an allow entry with a reason suppresses exactly that path, a stale entry is unused-allow", async () => {
+    const files = {
+      "src/container.ts": 'export const tmpfs = "/tmp";\n',
+      "src/other.ts": 'export const dir = "/tmp/cache";\n',
+    };
+    const entry = {
+      rule: "hardcoded-tmp",
+      path: "src/container.ts",
+      reason: "Container path: the tmpfs mounted inside the Docker container",
+    };
+    const unallowed = await repo(files);
+    assert.deepEqual(
+      applyAllowlist(
+        await findAll(unallowed),
+        loadConfig(unallowed).allow ?? [],
+      )
+        .reported.map((f) => `${f.rule} ${f.path}`)
+        .sort(),
+      ["hardcoded-tmp src/container.ts", "hardcoded-tmp src/other.ts"],
+    );
+
+    const noReason = await repo({
+      "releaseready-guardrails.json": JSON.stringify({
+        allow: [{ rule: "hardcoded-tmp", path: "src/container.ts" }],
+      }),
+    });
+    assert.throws(() => loadConfig(noReason), /reason/);
+
+    const allowed = await repo({
+      ...files,
+      "releaseready-guardrails.json": JSON.stringify({ allow: [entry] }),
+    });
+    const { reported, allowed: count } = applyAllowlist(
+      await findAll(allowed),
+      loadConfig(allowed).allow ?? [],
+    );
+    assert.deepEqual(
+      reported.map((f) => `${f.rule} ${f.path}`),
+      ["hardcoded-tmp src/other.ts"],
+    );
+    assert.equal(count, 1);
+
+    const stale = await repo({
+      "src/other.ts": files["src/other.ts"],
+      "releaseready-guardrails.json": JSON.stringify({ allow: [entry] }),
+    });
+    assert.deepEqual(
+      applyAllowlist(await findAll(stale), loadConfig(stale).allow ?? [])
+        .reported.map((f) => `${f.rule} ${f.path}`)
+        .sort(),
+      [
+        "hardcoded-tmp src/other.ts",
+        "unused-allow releaseready-guardrails.json",
+      ],
+    );
+  });
+
   test("readme-dated-history: dated headings, status lines and ticket headings", async () => {
     const hits = await rulesHit({
       "README.md":
@@ -594,6 +651,8 @@ describe("allowlist", () => {
       },
       { allow: [{ rule: "tracked-build-output", path: "dist", reason: "" }] },
       { allow: [{ rule: "tracked-ds-store", path: ".DS_Store" }] },
+      { allow: [{ rule: "hardcoded-tmp", path: "src/tmp.ts" }] },
+      { allow: [{ rule: "hardcoded-tmp", path: "src/tmp.ts", reason: "" }] },
       { allow: [{ rule: "oversized-source-file", path: "src/big.ts" }] },
       { fileLength: { maxLines: 1500 } },
       { fileLength: { generated: [{ path: "src/gen/**" }] } },
