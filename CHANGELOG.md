@@ -1,11 +1,18 @@
 # Changelog
 
-## Unreleased
+## 3.0.0 (2026-11-21)
+
+Major release: it adds error-level rules, so a repo moving from 2.x can fail `releaseready-guardrails` until it fixes or allowlists the new findings. Measured with `--static` on `origin/main` of every consumer repo on 21 Nov 2026, after each repo's own allowlist:
+
+- `oversized-source-file`: ReleaseReady 27, ai-orchestrator 18, test-management 4, universal-playwright-framework 3, frontend-ui 2, code-quality 1, universal-api-framework 1, the rest 0.
+- `hand-written-archive-parser`: code-quality 3, ReleaseReady 1 (`apps/portal-tests/code-quality-fixture.ts`), ai-orchestrator 1, the rest 0.
+- `hardcoded-tmp`: ReleaseReady 2 (container tmpfs paths, now allowlistable), the rest 0.
+- `unpublished-internal-dependency`, `tracked-build-output`: 0 everywhere.
 
 - `releaseready-guardrails` (RRDSCRUM-390): `hardcoded-tmp` can now be allowlisted with a reason like every other rule (for example a `/tmp` path inside a container). The rule is unchanged: still on by default, still an error, same matching; only recording a reviewed exception is new.
-- `releaseready-guardrails` (RRDSCRUM-435): new rule `oversized-source-file` fails on a non-generated JS/TS/Python source file over 1,000 lines. The limit is `fileLength.maxLines` (a higher limit needs a `reason`). Generated files are excluded by default globs plus `fileLength.generated` entries, each with a reason. Rules now receive the repo's config (`findAll(root, config?)`). This is a new error-level rule, so a major release. Measured against the local checkouts of the consumer repos (13–20 Nov): ReleaseReady 15, ai-orchestrator 5, test-management 4, universal-playwright-framework 4, frontend-ui 2, code-quality 1, universal-api-framework 1, the rest 0. Measure again on `origin/main` before release.
+- `releaseready-guardrails` (RRDSCRUM-435): new rule `oversized-source-file` fails on a non-generated JS/TS/Python source file over 1,000 lines. The limit is `fileLength.maxLines` (a higher limit needs a `reason`). Generated files are excluded by default globs plus `fileLength.generated` entries, each with a reason. Rules now receive the repo's config (`findAll(root, config?)`). This is a new error-level rule, so a major release. Counts on `origin/main` are at the top of this release.
 - `releaseready-guardrails` (RRDSCRUM-434): new rules `unpublished-internal-dependency` (`@releaseready/*` from git, a tarball, or a local or `dist/` folder where `dependency-source` does not look: `npm:` aliases, `overrides`, lockfile links outside the repo and release-tarball `resolved` URLs) and `tracked-build-output` (a tracked `dist/` or `build/` folder). `tracked-ds-store` can now be allowlisted with a reason like every other rule. New error-level rules, so a major release.
-- `releaseready-guardrails`: new rule `hand-written-archive-parser` (raw inflate from `node:zlib` or a ZIP local-file-header signature in source), the permanent guard for RR-08. A new error-level rule, so a major release. Measured against `origin/main` of every consumer repo: 0 findings, except ReleaseReady (1, the RR-08 reader, removed by ReleaseReady PR 369).
+- `releaseready-guardrails`: new rule `hand-written-archive-parser` (raw inflate from `node:zlib` or a ZIP local-file-header signature in source), the permanent guard for RR-08. A new error-level rule, so a major release. The RR-08 reader was removed by ReleaseReady PR 369; counts on `origin/main` are at the top of this release.
 - Licensed under Apache-2.0 (`LICENSE`, `package.json`); previously `UNLICENSED`. Owner decision, 20 Nov 2026.
 
 ## 2.3.0 (2026-11-20)
