@@ -1,9 +1,16 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { parse } from "yaml";
 import { HOOKS } from "../hooks/install.js";
 import {
   loadRepos,
@@ -191,4 +198,18 @@ test("a repo's extra scripts are added without replacing one it already has", ()
   );
   assert.equal(pkg.scripts["test:affected"], "npm run unit");
   assert.equal(pkg.scripts.lint, "eslint .");
+});
+
+test("this repo's pr.yml reports the one required `ci` check after every other job, and skips drafts", () => {
+  const { jobs } = parse(
+    readFileSync(join(ROOT, ".github/workflows/pr.yml"), "utf8"),
+  );
+  assert.deepEqual(
+    [...jobs.ci.needs].sort(),
+    Object.keys(jobs)
+      .filter((id) => id !== "ci")
+      .sort(),
+  );
+  for (const job of Object.values(jobs))
+    assert.match(job.if, /pull_request\.draft/);
 });

@@ -3,6 +3,7 @@ name: Pull request
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   contents: read
 concurrency:
@@ -10,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   checks:
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -29,6 +31,7 @@ jobs:
       - name: Validate the Renovate preset
         run: npm run renovate:check
   security:
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -38,3 +41,18 @@ jobs:
           persist-credentials: false
       - name: gitleaks, trivy, semgrep and zizmor
         uses: ./.github/actions/security-scan
+  # The one required status check in branch protection (RRDPLAT-105), the same name every other repo reports.
+  # Config keeps its own two jobs because its check needs gitleaks and the security scan; it stays on hosted
+  # ubuntu-24.04 as a public repo (the org runner group keeps public repos off rr-local).
+  ci:
+    needs: [checks, security]
+    if: ${{ !cancelled() && !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          case " $RESULTS " in
+            *" failure "*|*" cancelled "*|*" skipped "*) echo "A required job did not pass: $RESULTS" >&2; exit 1 ;;
+          esac
