@@ -74,6 +74,13 @@ runs:
         # each release. Versions are pinned by the lockfile and Renovate. Revisit when npm is upgraded.
         "$RUNNER_TEMP/semgrep/bin/semgrep" scan --config p/default --error --metrics=off --quiet --exclude node_modules \
           --exclude-rule package_managers.npm.npm-missing-minimum-release-age.npm-missing-minimum-release-age
+    - name: semgrep satisfies identifier
+      if: ${{ !cancelled() }}
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+      # Semgrep skips lines that use `satisfies` as an identifier without failing the scan (RRDSCRUM-395).
+      run: python3 "$ACTION_PATH/satisfies-identifier.py" .
     - name: zizmor
       if: ${{ !cancelled() }}
       shell: bash
