@@ -29,7 +29,7 @@ const SELF_HOSTED = "[self-hosted, rr-local]";
 const AGENTS_MARKER = "## Local hooks and CI";
 
 /**
- * @typedef {{ name: string, private: boolean, checkCommand?: string, skip?: string }} Repo
+ * @typedef {{ name: string, private: boolean, checkCommand?: string, scripts?: Record<string, string>, skip?: string }} Repo
  * @typedef {{ path: string, before: string | null, after: string | null }} Change
  */
 
@@ -152,6 +152,9 @@ export function planRepo(dir, repo, sha) {
       `scripts.prepare is "${pkg.scripts.prepare}"; left as is, chain the hooks install by hand`,
     );
   else pkg.scripts.prepare = prepare;
+  // Scripts the repo needs for the hooks (for example `test:affected`, so pre-push does not run a browser suite).
+  for (const [name, command] of Object.entries(repo.scripts ?? {}))
+    pkg.scripts[name] ??= command;
   if (!pkg.scripts.check && !repo.checkCommand)
     warnings.push(
       "no `check` script and no checkCommand in rollout-repos.json: `releaseready-hooks verify` would fail",

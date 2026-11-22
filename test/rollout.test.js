@@ -1,9 +1,16 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { parse } from "yaml";
 import { HOOKS } from "../hooks/install.js";
 import {
   loadRepos,
@@ -167,4 +174,42 @@ test("the PR body names the runner decision for the repo", () => {
     /Justified exception/,
   );
   assert.match(prBody({ name: "x", private: true }, []), /rr-local/);
+});
+
+test("a repo's extra scripts are added without replacing one it already has", () => {
+  const repo = {
+    name: "synthetic",
+    private: true,
+    scripts: { "test:affected": "npm run unit", lint: "never" },
+  };
+  const { changes } = planRepo(
+    repoDir({
+      "package.json": JSON.stringify({
+        scripts: { check: "true", lint: "eslint ." },
+      }),
+      "AGENTS.md": "# Agents\n",
+      ".github/workflows/pr.yml": HOSTED_WORKFLOW,
+    }),
+    repo,
+    SHA,
+  );
+  const pkg = JSON.parse(
+    changes.find((change) => change.path === "package.json")?.after ?? "",
+  );
+  assert.equal(pkg.scripts["test:affected"], "npm run unit");
+  assert.equal(pkg.scripts.lint, "eslint .");
+});
+
+test("this repo's pr.yml reports the one required `ci` check after every other job, and skips drafts", () => {
+  const { jobs } = parse(
+    readFileSync(join(ROOT, ".github/workflows/pr.yml"), "utf8"),
+  );
+  assert.deepEqual(
+    [...jobs.ci.needs].sort(),
+    Object.keys(jobs)
+      .filter((id) => id !== "ci")
+      .sort(),
+  );
+  for (const job of Object.values(jobs))
+    assert.match(job.if, /pull_request\.draft/);
 });
