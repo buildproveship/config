@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.2.0 (2026-11-22)
 
 New, no change to existing exports (RRDPLAT-104):
 
