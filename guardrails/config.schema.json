@@ -28,6 +28,7 @@
               "copied-wcag-contrast",
               "legacy-marker",
               "skipped-test",
+              "runtime-assert",
               "hardcoded-tmp",
               "eslint-rule-off-without-reason",
               "readme-dated-history",
