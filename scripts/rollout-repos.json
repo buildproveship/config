@@ -1,0 +1,31 @@
+{
+  "release": "v4.2.0",
+  "repos": [
+    { "name": "ReleaseReady", "private": true },
+    {
+      "name": "frontend-ui",
+      "private": true,
+      "checkCommand": "npm run build:design-system && npm run typecheck && npm run lint && npm run format:check && npm run test:checks && npm run build:library:page && npm run check:guardrails && npm run check:licences && npm run check:code-quality && npm run build:design:vite && npx playwright install chromium && npx playwright test --project=pr-axe"
+    },
+    { "name": "releaseready-product-tests", "private": true },
+    { "name": "test-management", "private": true },
+    { "name": "test-data-management", "private": true },
+    { "name": "universal-api-framework", "private": false },
+    {
+      "name": "universal-appium-framework",
+      "private": false,
+      "checkCommand": "npm run check:offline"
+    },
+    { "name": "universal-playwright-framework", "private": false },
+    {
+      "name": "observability",
+      "private": false,
+      "skip": "Python repo: no package.json, so there is nothing to install Husky or the config package into"
+    },
+    {
+      "name": "config",
+      "private": false,
+      "skip": "This repo: its hooks already run from hooks/ and its pr.yml calls the same checks; switched by hand in its own PR"
+    }
+  ]
+}

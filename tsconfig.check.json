@@ -13,6 +13,7 @@
     "modules.d.ts",
     "guardrails/*.js",
     "hooks/*.js",
+    "scripts/*.js",
     "test/**/*.js"
   ],
   "exclude": ["test/fixtures/**"]
