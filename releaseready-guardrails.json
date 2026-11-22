@@ -62,7 +62,7 @@
     {
       "rule": "suppression-without-reason",
       "path": "test/guardrails.test.js",
-      "max": 4,
+      "max": 7,
       "reason": "The tests feed deliberate unexplained suppressions to the suppression-without-reason rule"
     },
     {

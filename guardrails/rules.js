@@ -573,35 +573,43 @@ function scannerPatterns(repo) {
 function suppressionsAndArgv(repo) {
   const jsGlob = "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}";
   const directive =
-    /(?:\/\/|\/\*+)\s*(eslint-disable(?:-next-line|-line)?|@ts-ignore|@ts-expect-error)(?![\w-])(.*)$/;
+    /^(eslint-disable(?:-next-line|-line)?|@ts-ignore|@ts-expect-error)(?![\w-])([\s\S]*)$/;
+  const comment = /\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
+  /** @param {string} raw */
+  const body = (raw) =>
+    raw.startsWith("//") ? raw.slice(2) : raw.slice(2, -2).replace(/^\*+/, "");
   /** @type {Finding[]} */
   const findings = [];
   for (const path of repo.paths.filter(
     (p) => matches(p, jsGlob) && !matches(p, skillCopies),
   )) {
-    const lines = repo.read(path).split("\n");
-    lines.forEach((text, index) => {
-      const found = directive.exec(text);
-      if (found) {
-        const rest = (found[2] ?? "").replace(/\*\/.*$/, "");
-        const inline = found[1]?.startsWith("eslint")
-          ? /--\s+.*[A-Za-z]{3}/.test(rest)
-          : /[A-Za-z]{3}/.test(rest);
-        const above = (lines[index - 1] ?? "").trim();
-        const explained =
-          /^(?:\/\/|\/\*|\*)/.test(above) &&
-          !directive.test(above) &&
-          /[A-Za-z]{3}/.test(above);
-        if (!inline && !explained) {
-          findings.push({
-            rule: "suppression-without-reason",
-            path,
-            line: index + 1,
-            message: `${found[1]} without a reason: fix the code, or say why (\`-- reason\` for eslint-disable, text after @ts-ignore / @ts-expect-error)`,
-            text,
-          });
-        }
+    // Every JS/TS line terminator (CRLF, CR, U+2028, U+2029) becomes LF, so line numbers match countSourceLines.
+    const source = repo.read(path).replace(/\r\n|[\r\u2028\u2029]/g, "\n");
+    const lines = source.split("\n");
+    for (const match of source.matchAll(comment)) {
+      const found = directive.exec(body(match[0]).trim());
+      if (!found) continue;
+      const rest = found[2] ?? "";
+      const inline = found[1]?.startsWith("eslint")
+        ? /--\s+[\s\S]*[A-Za-z]{3}/.test(rest)
+        : /[A-Za-z]{3}/.test(rest);
+      const line = source.slice(0, match.index).split("\n").length;
+      const above = (lines[line - 2] ?? "").trim();
+      const explained =
+        /^(?:\/\/|\/\*|\*)/.test(above) &&
+        !directive.test(body(above).trim()) &&
+        /[A-Za-z]{3}/.test(above);
+      if (!inline && !explained) {
+        findings.push({
+          rule: "suppression-without-reason",
+          path,
+          line,
+          message: `${found[1]} without a reason: fix the code, or say why (\`-- reason\` for eslint-disable, text after @ts-expect-error; replace @ts-ignore)`,
+          text: lines[line - 1] ?? "",
+        });
       }
+    }
+    lines.forEach((text, index) => {
       if (/\bprocess\.argv\s*\[\s*\d+\s*\]/.test(text)) {
         findings.push({
           rule: "argv-index",

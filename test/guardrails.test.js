@@ -349,6 +349,23 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
+  test("suppressions: block comments and every line terminator are scanned", async () => {
+    const hits = await rulesHit({
+      "src/b.ts": "/*\n eslint-disable no-console\n*/\nconst a = 1;\n",
+      "src/c.ts": "/*\n eslint-disable no-console -- a CLI prints\n*/\n",
+      "src/d.ts": "const a = 1;\r\n// eslint-disable-next-line x\r\nf();\r\n",
+      "src/e.ts": "const a = 1;\r// eslint-disable-next-line x\rf();\r",
+      "src/f.ts": "const a = 1;\u2028// @ts-ignore\u2029f();\n",
+      "src/g.ts": "/* eslint-disable x\n   -- the reason is here */\n",
+    });
+    assert.deepEqual(hits.sort(), [
+      "suppression-without-reason src/b.ts:1",
+      "suppression-without-reason src/d.ts:2",
+      "suppression-without-reason src/e.ts:2",
+      "suppression-without-reason src/f.ts:2",
+    ]);
+  });
+
   test("suppression-without-reason and argv-index: an allow entry needs a reason", async () => {
     for (const rule of ["suppression-without-reason", "argv-index"]) {
       const noReason = await repo({
