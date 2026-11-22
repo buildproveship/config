@@ -127,7 +127,7 @@ Existing findings go in a baseline in the consumer repo, never a switch-off:
 - gitleaks: `.gitleaks-baseline.json` (`gitleaks git --report-path .gitleaks-baseline.json --redact` once; review each
   entry first, a live secret is rotated, not baselined).
 - trivy: `.trivyignore`, one id per line with a reason comment above it.
-- semgrep: an inline `nosemgrep: <rule-id> -- reason` comment on the line.
+- semgrep: a tracked TypeScript file that uses `satisfies` as an identifier fails the scan (Semgrep skips such lines without failing); rename the identifier. Other findings take an inline `nosemgrep: <rule-id> -- reason` comment on the line.
 - zizmor: `.github/zizmor.yml` with `rules.<id>.ignore` entries and a reason comment each.
 
 ## Python

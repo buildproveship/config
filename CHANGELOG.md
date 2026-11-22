@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `security-scan`: new step fails when tracked TypeScript uses `satisfies` as an identifier. Semgrep 1.186.0 still skips such lines (PartialParsing) without failing `--error`. Consumers can delete their own copy of this check (RRDSCRUM-395).
+
 ## 4.0.0 (2026-11-22)
 
 New error-level rules, major release: a repo moving from 3.x can fail `releaseready-guardrails` until it fixes or allowlists the new findings. Measured with `--static` on `origin/main` of every consumer repo on 21 Nov 2026, after each repo's own allowlist:
