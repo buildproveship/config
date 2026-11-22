@@ -14,6 +14,7 @@ import { parse } from "yaml";
 import { HOOKS } from "../hooks/install.js";
 import {
   loadRepos,
+  planDeliveryRules,
   planRepo,
   prBody,
   renderCopilotSetup,
@@ -212,4 +213,20 @@ test("this repo's pr.yml reports the one required `ci` check after every other j
   );
   for (const job of Object.values(jobs))
     assert.match(job.if, /pull_request\.draft/);
+});
+
+test("the delivery rules section comes from templates/AGENTS.md, links both pages, and is added once", () => {
+  const dir = repoDir({ "AGENTS.md": "# Agents\n\nOwn text.\n" });
+  const [change] = planDeliveryRules(dir);
+  assert.match(change?.after ?? "", /Own text\.\n\n## Delivery rules\n/);
+  assert.match(change?.after ?? "", /pages\/27328513/);
+  assert.match(change?.after ?? "", /pages\/27230233/);
+  assert.match(change?.after ?? "", /pages\/26411190/);
+  assert.match(change?.after ?? "", /\*\*Agent brief\*\*/);
+  const section = (change?.after ?? "").split("## Delivery rules")[1] ?? "";
+  assert.ok(section.trim().split("\n").length <= 10, "at most 10 lines");
+  assert.deepEqual(
+    planDeliveryRules(repoDir({ "AGENTS.md": change?.after ?? "" })),
+    [],
+  );
 });
