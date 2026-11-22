@@ -109,7 +109,7 @@ For the WebdriverIO and Playwright frameworks (appium2, UPF); synthetic values o
 
 - `@releaseready/config/dotenv`: `loadEnv({ path?, processEnv? })` reads a `.env` file into `process.env` (dotenv; values already set win; a missing file is fine) and returns what the file held.
 - `@releaseready/config/allure`: `allureReporter(options?)` returns the `["allure", { outputDir: "allure-results", ...options }]` reporter tuple: `reporters: ["spec", allureReporter()]`. The repo installs `@wdio/allure-reporter` itself.
-- `@releaseready/config/templates/AGENTS.md`, `CLAUDE.md` and `copilot-instructions.md`: the shared agent rule files (test classification, design before implementation). Copy them into the repo once, then add repo-specific rules above the shared sections; the CLAUDE.md and AGENTS.md pointers need no edits.
+- `@releaseready/config/templates/AGENTS.md`, `CLAUDE.md` and `copilot-instructions.md`: the shared agent rule files (test classification, design before implementation). Copy them into the repo once, then add repo-specific rules above the shared sections; fill in the check command in the AGENTS.md and CLAUDE.md code-quality block.
 
 ## Security scanners
 

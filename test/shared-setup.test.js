@@ -37,6 +37,12 @@ test("loadEnv treats a missing .env file as empty", () => {
   assert.deepEqual(target, {});
 });
 
+test("loadEnv throws when the path cannot be read as a file", () => {
+  assert.throws(() => loadEnv({ path: tmpdir(), processEnv: {} }), {
+    code: "EISDIR",
+  });
+});
+
 test("allureReporter returns the wdio reporter tuple with one output directory", () => {
   assert.deepEqual(allureReporter(), [
     "allure",
@@ -62,4 +68,14 @@ test("the rule-file templates resolve through the package export", () => {
   );
   assert.match(rules, /## Tests and classification/);
   assert.match(rules, /## Design before implementation/);
+  for (const name of ["AGENTS.md", "CLAUDE.md"]) {
+    const text = readFileSync(
+      require.resolve(`@releaseready/config/templates/${name}`),
+      "utf8",
+    );
+    assert.ok(
+      text.includes("skills/releaseready-code-quality/SKILL.md"),
+      `${name} must point to the skill (skill-drift)`,
+    );
+  }
 });
