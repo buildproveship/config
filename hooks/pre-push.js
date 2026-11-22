@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isDocsOnly } from "./paths.js";
-import { capture, reportTime, run } from "./run.js";
+import { capture, reportTime, run, withoutGitEnv } from "./run.js";
 
 const BUDGET_SECONDS = 120;
 const ZERO_SHA = /^0+$/;
@@ -80,9 +80,10 @@ export function prePush(root, refs) {
   }
 
   const scripts = readScripts(root);
+  const scriptOptions = { cwd: root, env: withoutGitEnv(process.env) };
   if (
     scripts["typecheck"] &&
-    run("npm", ["run", "--silent", "typecheck"], { cwd: root }) !== 0
+    run("npm", ["run", "--silent", "typecheck"], scriptOptions) !== 0
   )
     return 1;
 
@@ -90,11 +91,13 @@ export function prePush(root, refs) {
   // (`vitest related`). A repo with neither runs its whole `test` script, which must fit the budget.
   let tests = 0;
   if (scripts["test:affected"]) {
-    tests = run("npm", ["run", "--silent", "test:affected", "--", ...changed], {
-      cwd: root,
-    });
+    tests = run(
+      "npm",
+      ["run", "--silent", "test:affected", "--", ...changed],
+      scriptOptions,
+    );
   } else if (scripts["test"]) {
-    tests = run("npm", ["run", "--silent", "test"], { cwd: root });
+    tests = run("npm", ["run", "--silent", "test"], scriptOptions);
   }
   reportTime("pre-push", startedAt, BUDGET_SECONDS);
   return tests === 0 ? 0 : 1;

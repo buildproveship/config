@@ -228,7 +228,7 @@ test("pre-push blocks a failing affected test and a failing type-check, and skip
       },
     }),
     "affected.js":
-      'process.exit(process.argv.slice(2).includes("src/broken.js") ? 1 : 0);\n',
+      'process.exit(process.env["GIT_DIR"] || process.argv.slice(2).includes("src/broken.js") ? 1 : 0);\n',
     "typecheck.js": 'process.exit(process.env["FAIL_TYPECHECK"] ? 1 : 0);\n',
   });
   /** @param {string} branch @param {string} file */
@@ -246,11 +246,12 @@ test("pre-push blocks a failing affected test and a failing type-check, and skip
   assert.notEqual(failing.status, 0);
   assert.match(failing.output, /test:affected/);
 
-  assert.equal(
-    runHook(work, "pre-push", { input: branchWith("fine", "src/ok.js") })
-      .status,
-    0,
-  );
+  // Git gives hooks GIT_DIR; the repo's test script must not see it (it would point temporary repos at this one).
+  const fine = runHook(work, "pre-push", {
+    input: branchWith("fine", "src/ok.js"),
+    env: { ...cleanEnv(), GIT_DIR: join(work, ".git") },
+  });
+  assert.equal(fine.status, 0, fine.output);
 
   const typeError = runHook(work, "pre-push", {
     input: pushLine(work, "fine"),

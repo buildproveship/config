@@ -13,9 +13,13 @@ const script = new URL(
 /** @param {string} source */
 function scan(source) {
   const dir = mkdtempSync(join(tmpdir(), "satisfies-"));
-  execFileSync("git", ["init", "-q"], { cwd: dir });
+  // Run from a git hook (pre-push), GIT_DIR is set and `git init` would rewrite the real repo's config.
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_")),
+  );
+  execFileSync("git", ["init", "-q"], { cwd: dir, env });
   writeFileSync(join(dir, "a.ts"), source);
-  execFileSync("git", ["add", "a.ts"], { cwd: dir });
+  execFileSync("git", ["add", "a.ts"], { cwd: dir, env });
   return spawnSync("python3", [script, dir], { encoding: "utf8" });
 }
 
