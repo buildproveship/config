@@ -168,3 +168,27 @@ test("the PR body names the runner decision for the repo", () => {
   );
   assert.match(prBody({ name: "x", private: true }, []), /rr-local/);
 });
+
+test("a repo's extra scripts are added without replacing one it already has", () => {
+  const repo = {
+    name: "synthetic",
+    private: true,
+    scripts: { "test:affected": "npm run unit", lint: "never" },
+  };
+  const { changes } = planRepo(
+    repoDir({
+      "package.json": JSON.stringify({
+        scripts: { check: "true", lint: "eslint ." },
+      }),
+      "AGENTS.md": "# Agents\n",
+      ".github/workflows/pr.yml": HOSTED_WORKFLOW,
+    }),
+    repo,
+    SHA,
+  );
+  const pkg = JSON.parse(
+    changes.find((change) => change.path === "package.json")?.after ?? "",
+  );
+  assert.equal(pkg.scripts["test:affected"], "npm run unit");
+  assert.equal(pkg.scripts.lint, "eslint .");
+});
