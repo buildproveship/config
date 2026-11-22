@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, test } from "node:test";
@@ -839,5 +839,26 @@ describe("CLI", () => {
       encoding: "utf8",
     });
     assert.equal(passing.status, 0, passing.stdout);
+  });
+});
+
+describe("allowlist schema", () => {
+  test("every rule the scanners emit can be allowlisted in releaseready-guardrails.json", () => {
+    const source = readFileSync(
+      new URL("../guardrails/rules.js", import.meta.url),
+      "utf8",
+    );
+    const emitted = new Set(
+      [...source.matchAll(/\brule: "([a-z-]+)"/g)].map((m) => m[1]),
+    );
+    const schema = JSON.parse(
+      readFileSync(
+        new URL("../guardrails/config.schema.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const allowed = new Set(schema.properties.allow.items.properties.rule.enum);
+    const missing = [...emitted].filter((rule) => !allowed.has(rule));
+    assert.deepEqual(missing, []);
   });
 });

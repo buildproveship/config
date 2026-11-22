@@ -4,6 +4,8 @@
 
 New, no change to existing exports:
 
+- `releaseready-guardrails`: `runtime-assert` is now in the config schema's `allow[].rule` list, so a reviewed `assert` can be allowlisted with a reason like every other rule. Before, such an entry failed config validation, so a repo could neither fix nor allow a `runtime-assert` finding in a frozen snapshot. A test now fails when a rule the scanners emit is missing from that list.
+
 - `@releaseready/config/dotenv` (`loadEnv`), `@releaseready/config/allure` (`allureReporter`) and `@releaseready/config/templates/*` (AGENTS.md, CLAUDE.md, copilot-instructions.md). Adds `dotenv` as a dependency (RRDSCRUM-420).
 - `security-scan`: new step fails when tracked TypeScript uses `satisfies` as an identifier. Semgrep 1.186.0 still skips such lines (PartialParsing) without failing `--error`. Consumers can delete their own copy of this check (RRDSCRUM-395).
 
