@@ -11,6 +11,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  rmSync,
   readFileSync,
   readdirSync,
   writeFileSync,
@@ -288,6 +289,8 @@ function apply(dir, repo, changes, work) {
     cwd: dir,
     env,
   });
+  // The repo's own check first (it builds what the pre-push type-check needs, and "local checks first" saves CI minutes).
+  run("sh", ["-c", repo.checkCommand ?? "npm run check"], { cwd: dir, env });
   git("add", "-A");
   git(
     "commit",
@@ -327,25 +330,30 @@ function main() {
   const { release, repos } = loadRepos();
   const sha = releaseSha(release);
   const work = mkdtempSync(join(tmpdir(), "rollout-"));
-  for (const repo of repos) {
-    if (values.repo && !values.repo.includes(repo.name)) continue;
-    console.log(
-      `\n## ${repo.name} (${repo.private ? "private, rr-local" : "public, ubuntu-24.04 exception"})`,
-    );
-    if (repo.skip) {
-      console.log(`skipped: ${repo.skip}`);
-      continue;
+  try {
+    for (const repo of repos) {
+      if (values.repo && !values.repo.includes(repo.name)) continue;
+      console.log(
+        `\n## ${repo.name} (${repo.private ? "private, rr-local" : "public, ubuntu-24.04 exception"})`,
+      );
+      if (repo.skip) {
+        console.log(`skipped: ${repo.skip}`);
+        continue;
+      }
+      const dir = clone(repo.name, work);
+      const { changes, warnings } = planRepo(dir, repo, sha);
+      for (const { path, before } of changes)
+        console.log(`${before === null ? "A" : "M"} ${path}`);
+      for (const warning of warnings) console.log(`warning: ${warning}`);
+      if (values.apply) {
+        if (warnings.length > 0)
+          throw new Error(`${repo.name}: resolve the warnings before --apply`);
+        console.log(apply(dir, repo, changes, work));
+      }
     }
-    const dir = clone(repo.name, work);
-    const { changes, warnings } = planRepo(dir, repo, sha);
-    for (const { path, before } of changes)
-      console.log(`${before === null ? "A" : "M"} ${path}`);
-    for (const warning of warnings) console.log(`warning: ${warning}`);
-    if (values.apply) {
-      if (warnings.length > 0)
-        throw new Error(`${repo.name}: resolve the warnings before --apply`);
-      console.log(apply(dir, repo, changes, work));
-    }
+  } finally {
+    // The token file must not outlive the run; the clones stay for inspection.
+    rmSync(join(work, "npmrc"), { force: true });
   }
 }
 
