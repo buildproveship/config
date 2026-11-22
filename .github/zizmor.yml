@@ -8,4 +8,7 @@ rules:
     ignore:
       # Reason: "$/..." is rejected by the semgrep github-actions-mutable-action-tag rule, which wants @sha; the
       # local "./" path is the form every tool understands.
-      - pr.yml:49
+      - pr.yml:26
+      - pr.yml:40
+      - release.yml:32
+      - copilot-setup-steps.yml:23

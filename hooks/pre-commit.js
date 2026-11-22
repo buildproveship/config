@@ -1,11 +1,13 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { run, reportTime } from "./run.js";
 
 const require = createRequire(import.meta.url);
-const SHARED_CONFIG = new URL("./lint-staged.config.js", import.meta.url)
-  .pathname;
+const SHARED_CONFIG = fileURLToPath(
+  new URL("./lint-staged.config.js", import.meta.url),
+);
 const BUDGET_SECONDS = 10;
 
 /**

@@ -7,7 +7,8 @@
 #   - one run per PR (cancel-in-progress), dependencies and build output cached
 #   - the default runner is the self-hosted `rr-local` (RRDPLAT-104). Fork PRs never get it: a public repo would
 #     otherwise run a stranger's code on the owner's Mac, so they run on a GitHub-hosted runner instead.
-# Callers grant: permissions: { contents: read, pull-requests: read }.
+# Callers grant: permissions: { contents: read, pull-requests: read, packages: read } (packages: npm ci installs
+# @releaseready/config from GitHub Packages, which needs a token even for a public package).
 name: Reusable CI
 on:
   workflow_call:
@@ -37,6 +38,7 @@ on:
         default: "src/**"
 permissions:
   contents: read
+  packages: read
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -61,8 +63,11 @@ jobs:
           set -euo pipefail
           docs_only=false
           if [ "$EVENT" = "pull_request" ]; then
-            files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
-            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -Evq "$PATTERN"; then docs_only=true; fi
+            # A rename lists both ends: moving src/a.ts to docs/a.ts removes a source file.
+            files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)')
+            # Collect the whole output first (grep -q would exit early and SIGPIPE printf under pipefail).
+            source_files=$(printf '%s\n' "$files" | grep -Ev "$PATTERN" || true)
+            if [ -n "$files" ] && [ -z "$source_files" ]; then docs_only=true; fi
           fi
           echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
   checks:
@@ -78,6 +83,8 @@ jobs:
         with:
           node-version-file: ${{ inputs.node-version-file }}
           cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@releaseready"
       - name: Restore build output
         if: ${{ inputs.cache-paths != '' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -85,6 +92,8 @@ jobs:
           path: ${{ inputs.cache-paths }}
           key: build-${{ runner.os }}-${{ hashFiles(inputs.cache-key-files, 'package-lock.json') }}
       - name: Install dependencies
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: npm ci
       - name: Required check
         env:

@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { join, relative } from "node:path";
 import husky from "husky";
 
-const CLI = new URL("./cli.js", import.meta.url).pathname;
+const CLI = fileURLToPath(new URL("./cli.js", import.meta.url));
 const HOOKS = ["pre-commit", "commit-msg", "pre-push"];
 
 /**
@@ -10,8 +11,8 @@ const HOOKS = ["pre-commit", "commit-msg", "pre-push"];
  * @param {string} root the repo root
  */
 export function install(root) {
-  // CI and Docker builds have no use for hooks; HUSKY=0 skips too (handled by husky).
-  if (process.env["CI"]) return 0;
+  // CI and Docker builds have no use for hooks, and HUSKY=0 turns hooks off: write nothing in either case.
+  if (process.env["CI"] || process.env["HUSKY"] === "0") return 0;
   if (!existsSync(join(root, ".git"))) return 0;
   const previous = process.cwd();
   process.chdir(root);

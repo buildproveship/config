@@ -66,13 +66,42 @@ export function prePush(root, refs) {
     }
   }
 
-  const { localSha } = toCheck[0] ?? { localSha: "HEAD" };
+  // The scripts below run in this working tree, so they can only vouch for the commit that is checked out.
+  const head = capture("git", ["rev-parse", "HEAD"], {
+    cwd: root,
+  }).stdout.trim();
+  for (const { localSha } of toCheck) {
+    const tip = capture("git", ["rev-parse", `${localSha}^{commit}`], {
+      cwd: root,
+    }).stdout.trim();
+    if (tip !== head) {
+      console.error(
+        "pre-push: push the branch that is checked out, one branch at a time (tests run on the working tree, which must be the commit being pushed).",
+      );
+      return 1;
+    }
+  }
+  const dirty = capture(
+    "git",
+    ["status", "--porcelain", "--untracked-files=no"],
+    {
+      cwd: root,
+    },
+  ).stdout.trim();
+  if (dirty) {
+    console.error(
+      "pre-push: tracked files have uncommitted changes, so the tests would not match the commit being pushed. Commit or stash them.",
+    );
+    return 1;
+  }
+
+  // -z keeps file names exact (no quoting of non-ASCII names); --no-renames lists both ends of a move.
   const changed = capture(
     "git",
-    ["diff", "--name-only", "origin/main", localSha],
+    ["diff", "--name-only", "--no-renames", "-z", "origin/main", head],
     { cwd: root },
   )
-    .stdout.split("\n")
+    .stdout.split("\0")
     .filter(Boolean);
   if (changed.length === 0 || isDocsOnly(changed)) {
     reportTime("pre-push", startedAt, BUDGET_SECONDS);

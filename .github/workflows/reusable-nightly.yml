@@ -16,6 +16,7 @@ on:
         default: npm run check:full
 permissions:
   contents: read
+  packages: read
 concurrency:
   group: nightly-${{ github.workflow }}
   cancel-in-progress: true
@@ -32,7 +33,11 @@ jobs:
         with:
           node-version-file: ${{ inputs.node-version-file }}
           cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@releaseready"
       - name: Install dependencies
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: npm ci
       - name: Full E2E
         env:

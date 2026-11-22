@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -9,12 +10,13 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { test } from "node:test";
 import { parse } from "yaml";
 import { DOCS_ONLY_PATTERN } from "../hooks/paths.js";
 
-const REPO = new URL("../", import.meta.url).pathname;
+const REPO = fileURLToPath(new URL("../", import.meta.url));
 const CLI = join(REPO, "hooks/cli.js");
 const ZERO = "0".repeat(40);
 
@@ -57,7 +59,7 @@ function write(cwd, name, content) {
  * @param {Record<string, string>} files committed on main
  */
 function makeRepo(files = {}) {
-  const base = mkdtempSync(join(tmpdir(), "rr-hooks-"));
+  const base = mkdtempSync(join(tmpdir(), "rr hooks "));
   const origin = join(base, "origin.git");
   git(base, "init", "--bare", "--initial-branch=main", origin);
   /** @param {string} name */
@@ -217,8 +219,12 @@ test("pre-push blocks a direct push to main", () => {
   assert.match(result.output, /direct pushes to main are blocked/);
 });
 
-test("pre-push blocks a failing affected test and a failing type-check, and skips docs-only changes", () => {
-  const { work } = makeRepo({
+/**
+ * A repo whose scripts stand in for a real type-check and test runner.
+ * @param {Record<string, string>} extraFiles
+ */
+function makeScriptedRepo(extraFiles = {}) {
+  return makeRepo({
     "package.json": JSON.stringify({
       name: "fixture",
       type: "module",
@@ -227,18 +233,36 @@ test("pre-push blocks a failing affected test and a failing type-check, and skip
         typecheck: "node typecheck.js",
       },
     }),
-    "affected.js":
-      'process.exit(process.env["GIT_DIR"] || process.argv.slice(2).includes("src/broken.js") ? 1 : 0);\n',
+    // Fails on a leaked GIT_DIR, on src/broken.js, and on a file name that arrived quoted or escaped.
+    "affected.js": `const files = process.argv.slice(2);
+process.exit(process.env["GIT_DIR"] || files.includes("src/broken.js") || files.some((f) => /["\\\\]/.test(f)) ? 1 : 0);
+`,
     "typecheck.js": 'process.exit(process.env["FAIL_TYPECHECK"] ? 1 : 0);\n',
+    ...extraFiles,
   });
+}
+
+/**
+ * Commit one change on a new branch off main and return its push line.
+ * @param {string} work
+ * @param {string} branch
+ * @param {() => void} change
+ */
+function branchWithChange(work, branch, change) {
+  git(work, "checkout", "--quiet", "-b", branch, "main");
+  change();
+  git(work, "add", ".");
+  git(work, "commit", "--quiet", "-m", "RRDPLAT-104: change");
+  return pushLine(work, branch);
+}
+
+test("pre-push blocks a failing affected test and a failing type-check, and skips docs-only changes", () => {
+  const { work } = makeScriptedRepo();
   /** @param {string} branch @param {string} file */
-  const branchWith = (branch, file) => {
-    git(work, "checkout", "--quiet", "-b", branch, "main");
-    write(work, file, "export const a = 1;\n");
-    git(work, "add", ".");
-    git(work, "commit", "--quiet", "-m", "RRDPLAT-104: change");
-    return pushLine(work, branch);
-  };
+  const branchWith = (branch, file) =>
+    branchWithChange(work, branch, () =>
+      write(work, file, "export const a = 1;\n"),
+    );
 
   const failing = runHook(work, "pre-push", {
     input: branchWith("broken", "src/broken.js"),
@@ -270,6 +294,54 @@ test("pre-push blocks a failing affected test and a failing type-check, and skip
   );
 });
 
+test("pre-push treats a rename out of source as a source change", () => {
+  const { work } = makeScriptedRepo({
+    "src/broken.js": "export const a = 1;\n",
+  });
+  const input = branchWithChange(work, "move", () => {
+    mkdirSync(join(work, "docs"));
+    git(work, "mv", "src/broken.js", "docs/broken.js");
+  });
+  const result = runHook(work, "pre-push", { input });
+  assert.notEqual(
+    result.status,
+    0,
+    "a move out of src/ must still run the tests",
+  );
+});
+
+test("pre-push passes file names exactly, including non-ASCII ones", () => {
+  const { work } = makeScriptedRepo();
+  const input = branchWithChange(work, "accent", () =>
+    write(work, "src/café.js", "export const a = 1;\n"),
+  );
+  const result = runHook(work, "pre-push", { input });
+  assert.equal(result.status, 0, result.output);
+});
+
+test("pre-push only vouches for the checked-out commit", () => {
+  const { work } = makeScriptedRepo();
+  const first = branchWithChange(work, "first", () =>
+    write(work, "src/a.js", "export const a = 1;\n"),
+  );
+  branchWithChange(work, "second", () =>
+    write(work, "src/b.js", "export const b = 1;\n"),
+  );
+  // `first` is pushed while `second` is checked out: the scripts would test the wrong code.
+  const other = runHook(work, "pre-push", { input: first });
+  assert.notEqual(other.status, 0);
+  assert.match(other.output, /one branch at a time/);
+
+  write(
+    work,
+    "package.json",
+    `${readFileSync(join(work, "package.json"), "utf8")}\n`,
+  );
+  const dirty = runHook(work, "pre-push", { input: pushLine(work, "second") });
+  assert.notEqual(dirty.status, 0);
+  assert.match(dirty.output, /uncommitted changes/);
+});
+
 test("install points git at Husky and writes the three hooks; CI skips it", () => {
   const { work } = makeRepo();
   assert.equal(
@@ -282,6 +354,16 @@ test("install points git at Husky and writes the three hooks; CI skips it", () =
       encoding: "utf8",
     }).stdout.trim(),
     "/dev/null",
+  );
+
+  assert.equal(
+    runHook(work, "install", { env: { ...cleanEnv(), HUSKY: "0" } }).status,
+    0,
+  );
+  assert.equal(
+    existsSync(join(work, ".husky")),
+    false,
+    "HUSKY=0 writes nothing",
   );
 
   assert.equal(runHook(work, "install").status, 0);
@@ -375,10 +457,17 @@ test("the docs-only step skips checks for docs-only PRs and nothing else", () =>
   assert.ok(step?.run);
   const dir = mkdtempSync(join(tmpdir(), "rr-gh-"));
   const fakeGh = join(dir, "gh");
-  writeFileSync(fakeGh, '#!/bin/sh\nprintf "%s\\n" "$FAKE_FILES"\n');
+  const calls = join(dir, "calls");
+  // The real gh applies the --jq filter; this stand-in prints the file named by FAKE_FILES (a long list does not fit in the environment) and records the arguments it was given.
+  writeFileSync(
+    fakeGh,
+    `#!/bin/sh\nprintf "%s\\n" "$*" >> "${calls}"\ncat "$FAKE_FILES"\n`,
+  );
   chmodSync(fakeGh, 0o755);
   /** @param {string} event @param {string} files */
   const docsOnly = (event, files) => {
+    const listFile = join(dir, "list");
+    writeFileSync(listFile, `${files}\n`);
     const output = join(dir, "output");
     writeFileSync(output, "");
     const result = spawnSync("bash", ["-c", step.run ?? ""], {
@@ -386,7 +475,7 @@ test("the docs-only step skips checks for docs-only PRs and nothing else", () =>
       env: {
         ...cleanEnv(),
         PATH: `${dir}:${process.env["PATH"]}`,
-        FAKE_FILES: files,
+        FAKE_FILES: listFile,
         EVENT: event,
         REPO: "x/y",
         PR: "1",
@@ -406,7 +495,43 @@ test("the docs-only step skips checks for docs-only PRs and nothing else", () =>
     "docs_only=false",
   );
   assert.equal(docsOnly("pull_request", ""), "docs_only=false");
+  // A rename is listed at both ends: src/a.ts moved to docs/a.ts is not docs-only.
+  assert.equal(
+    docsOnly("pull_request", "docs/a.ts\nsrc/a.ts"),
+    "docs_only=false",
+  );
+  assert.match(readFileSync(calls, "utf8"), /previous_filename/);
+  // A long list with a source file near the top: grep -q would exit early and SIGPIPE printf.
+  const many = [
+    "src/a.ts",
+    ...Array.from({ length: 200_000 }, () => "docs/x.md"),
+  ].join("\n");
+  for (let run = 0; run < 3; run += 1) {
+    assert.equal(docsOnly("pull_request", many), "docs_only=false");
+  }
   assert.equal(docsOnly("push", "README.md"), "docs_only=false");
+});
+
+test("workflows install from GitHub Packages with a token, and the ones that run the hook tests install gitleaks", () => {
+  for (const file of [
+    ".github/workflows/reusable-ci.yml",
+    ".github/workflows/reusable-nightly.yml",
+    "templates/copilot-setup-steps.yml",
+  ]) {
+    const text = readFileSync(join(REPO, file), "utf8");
+    assert.match(text, /registry-url: https:\/\/npm\.pkg\.github\.com/, file);
+    assert.match(text, /NODE_AUTH_TOKEN: \$\{\{ github\.token \}\}/, file);
+    assert.match(text, /packages: read/, file);
+  }
+  assert.match(
+    readFileSync(join(REPO, "templates/workflows/pr.yml"), "utf8"),
+    /packages: read/,
+  );
+  // Config's own check includes test/hooks.test.js, which needs gitleaks.
+  for (const file of ["pr.yml", "release.yml", "copilot-setup-steps.yml"]) {
+    const text = readFileSync(join(REPO, ".github/workflows", file), "utf8");
+    assert.match(text, /uses: \.\/\.github\/actions\/install-gitleaks/, file);
+  }
 });
 
 test("the package ships the hooks bin and its files", () => {

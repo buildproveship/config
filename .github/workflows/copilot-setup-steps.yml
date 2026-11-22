@@ -5,6 +5,7 @@ name: Copilot setup steps
 on: workflow_dispatch
 permissions:
   contents: read
+  packages: read
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-24.04
@@ -17,4 +18,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@releaseready"
+      - uses: ./.github/actions/install-gitleaks # test/hooks.test.js needs it
       - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}

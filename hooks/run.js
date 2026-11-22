@@ -33,7 +33,7 @@ export function run(command, args, options = {}) {
 }
 
 /**
- * Run a command and return its trimmed stdout.
+ * Run a command and return its raw stdout (callers trim; file names must stay exact).
  * @param {string} command
  * @param {string[]} args
  * @param {{ cwd?: string }} [options]
@@ -45,7 +45,7 @@ export function capture(command, args, options = {}) {
   });
   return {
     status: result.error ? 1 : (result.status ?? 1),
-    stdout: result.stdout.trim(),
+    stdout: result.stdout,
     stderr: result.stderr.trim(),
   };
 }

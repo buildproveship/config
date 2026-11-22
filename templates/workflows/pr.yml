@@ -11,6 +11,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  packages: read
 jobs:
   ci:
     uses: releaseready/config/.github/workflows/reusable-ci.yml@<sha>

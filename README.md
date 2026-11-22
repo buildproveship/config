@@ -96,13 +96,16 @@ npm pkg set scripts.prepare="releaseready-hooks install"
 npm install # runs prepare; commit the generated .husky/ files
 ```
 
-`gitleaks` must be on the PATH (`brew install gitleaks`). `install` does nothing when `CI` or `HUSKY=0` is set.
+`gitleaks` must be on the PATH (`brew install gitleaks`; in CI use [`install-gitleaks`](.github/actions/install-gitleaks)). `install` does nothing when `CI` or `HUSKY=0` is set.
 
 | Hook         | Runs                                                                                                                                                                             | Budget  |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `pre-commit` | lint-staged (ESLint `--fix` and Prettier on staged files; a repo's own lint-staged config wins over [the shared one](hooks/lint-staged.config.js)), then `gitleaks git --staged` | ~10 s   |
 | `commit-msg` | the subject must match `^[A-Z][A-Z0-9]+-\d+: ` (any Jira project key, for example `RRDPLAT-104: add hooks`), so the commit shows in the ticket's Development panel               | instant |
 | `pre-push`   | blocks pushes to `main`; fetches `origin/main` and requires the branch to be rebased on it; then the `typecheck` script and the tests affected by the change                     | ~2 min  |
+
+`pre-push` tests the working tree, so it only accepts the checked-out branch (one branch per push) with no uncommitted
+changes to tracked files. A moved file counts at both ends: moving `src/a.ts` into `docs/` still runs the tests.
 
 A hook prints how long it took and warns when it is over budget; the warning never fails the push.
 
@@ -121,7 +124,8 @@ or edit a hook, and never push to `main`; a failing hook is fixed at its cause. 
 
 ### CI workflows
 
-Call these from the repo's own workflows with the templates in [`templates/workflows/`](templates/workflows), pinned to
+`npm ci` installs `@releaseready/config` from GitHub Packages, so the callers grant `packages: read` and the workflows pass
+`github.token` as `NODE_AUTH_TOKEN`. Call these from the repo's own workflows with the templates in [`templates/workflows/`](templates/workflows), pinned to
 the full commit sha of a release tag:
 
 - [`reusable-ci.yml`](.github/workflows/reusable-ci.yml): runs for ready pull requests and `main` (drafts are skipped; the

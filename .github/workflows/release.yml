@@ -28,6 +28,8 @@ jobs:
         run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
       - name: Install dependencies
         run: npm ci
+      # test/hooks.test.js runs the real pre-commit hook, which needs gitleaks.
+      - uses: ./.github/actions/install-gitleaks
       - name: Checks
         run: npm run check
       - name: Publish

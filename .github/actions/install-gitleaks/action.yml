@@ -1,0 +1,23 @@
+# Puts the pinned, checksum-verified gitleaks on the PATH. Config's own workflows use it because test/hooks.test.js runs the
+# real pre-commit hook. The version and checksums match .github/actions/security-scan (a composite action cannot call a
+# sibling by relative path, so keep the two in step when upgrading).
+name: install gitleaks
+description: Install gitleaks on Linux x64 or macOS arm64.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GITLEAKS_VERSION: 8.30.1
+        GITLEAKS_SHA256_LINUX_X64: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        GITLEAKS_SHA256_DARWIN_ARM64: b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5
+      run: |
+        set -euo pipefail
+        if [ "$RUNNER_OS-$RUNNER_ARCH" = "macOS-ARM64" ]; then asset=darwin_arm64; sha="$GITLEAKS_SHA256_DARWIN_ARM64"
+        elif [ "$RUNNER_OS-$RUNNER_ARCH" = "Linux-X64" ]; then asset=linux_x64; sha="$GITLEAKS_SHA256_LINUX_X64"
+        else echo "unsupported runner $RUNNER_OS-$RUNNER_ARCH" >&2; exit 1; fi
+        curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 -o "$RUNNER_TEMP/gitleaks.tgz" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_${asset}.tar.gz"
+        echo "${sha}  $RUNNER_TEMP/gitleaks.tgz" | shasum -a 256 -c -
+        rm -rf "$RUNNER_TEMP/gitleaks-bin"
+        mkdir "$RUNNER_TEMP/gitleaks-bin" && tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP/gitleaks-bin" gitleaks
+        echo "$RUNNER_TEMP/gitleaks-bin" >> "$GITHUB_PATH"
