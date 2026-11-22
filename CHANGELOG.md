@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+New, no change to existing exports (RRDPLAT-104):
+
+- `releaseready-hooks` bin and `hooks/` (RRDPLAT-104): `install` (Husky), `pre-commit` (lint-staged and `gitleaks git --staged`), `commit-msg` (Jira key), `pre-push` (blocks `main`, requires a branch rebased on a freshly fetched `origin/main`, type-check, affected tests), `verify`. Adds `husky` and `lint-staged` as dependencies and raises `engines.node` to `^22.22.1 || >=24.0.0` (lint-staged's minimum). New action `.github/actions/install-gitleaks`.
+- Reusable workflows `reusable-ci.yml` and `reusable-nightly.yml`, caller templates under `templates/workflows/`, and `templates/copilot-setup-steps.yml`. The runner is an input defaulting to `rr-local`; fork PRs always run hosted. The Copilot rules template says agents never use `--no-verify`.
+
 ## 4.1.0 (2026-11-22)
 
 New, no change to existing exports:
@@ -7,8 +14,6 @@ New, no change to existing exports:
 - `releaseready-guardrails`: `runtime-assert` is now in the config schema's `allow[].rule` list, so a reviewed `assert` can be allowlisted with a reason like every other rule. Before, such an entry failed config validation, so a repo could neither fix nor allow a `runtime-assert` finding in a frozen snapshot. A test now fails when a rule the scanners emit is missing from that list.
 
 - `@releaseready/config/dotenv` (`loadEnv`), `@releaseready/config/allure` (`allureReporter`) and `@releaseready/config/templates/*` (AGENTS.md, CLAUDE.md, copilot-instructions.md). Adds `dotenv` as a dependency (RRDSCRUM-420).
-- `releaseready-hooks` bin and `hooks/` (RRDPLAT-104): `install` (Husky), `pre-commit` (lint-staged and `gitleaks git --staged`), `commit-msg` (Jira key), `pre-push` (blocks `main`, requires a branch rebased on a freshly fetched `origin/main`, type-check, affected tests), `verify`. Adds `husky` and `lint-staged` as dependencies and raises `engines.node` to `^22.22.1 || >=24.0.0` (lint-staged's minimum). New action `.github/actions/install-gitleaks`.
-- Reusable workflows `reusable-ci.yml` and `reusable-nightly.yml`, caller templates under `templates/workflows/`, and `templates/copilot-setup-steps.yml`. The runner is an input defaulting to `rr-local`; fork PRs always run hosted. The Copilot rules template says agents never use `--no-verify`.
 - `security-scan`: new step fails when tracked TypeScript uses `satisfies` as an identifier. Semgrep 1.186.0 still skips such lines (PartialParsing) without failing `--error`. Consumers can delete their own copy of this check (RRDSCRUM-395).
 
 ## 4.0.0 (2026-11-22)
