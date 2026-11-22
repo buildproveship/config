@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 4.0.0 (2026-11-22)
 
-New error-level rules, so the next release is a major one. Measured with `--static` on `origin/main` of every consumer repo on 21 Nov 2026, after each repo's own allowlist:
+New error-level rules, major release: a repo moving from 3.x can fail `releaseready-guardrails` until it fixes or allowlists the new findings. Measured with `--static` on `origin/main` of every consumer repo on 21 Nov 2026, after each repo's own allowlist:
 
 - `suppression-without-reason`: 0 everywhere (the ESLint comments plugin already enforces it for `eslint-disable`; this also covers `@ts-ignore` / `@ts-expect-error`).
 - `argv-index`: ReleaseReady 42, frontend-ui 13, universal-api-framework 5, releaseready-product-tests 4, test-data-management 3, test-management 3, universal-playwright-framework 3, universal-appium2-framework 1, the rest 0.
