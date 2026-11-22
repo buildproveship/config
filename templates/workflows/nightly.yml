@@ -1,0 +1,12 @@
+# Copy to .github/workflows/nightly.yml. Replace <sha> with the full commit sha of the @releaseready/config release tag.
+name: Nightly E2E
+on:
+  schedule:
+    - cron: "30 18 * * *" # 02:30 Hong Kong time
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  e2e:
+    uses: releaseready/config/.github/workflows/reusable-nightly.yml@<sha>

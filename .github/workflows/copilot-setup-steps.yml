@@ -1,0 +1,26 @@
+# Copy to .github/workflows/copilot-setup-steps.yml. The Copilot coding agent runs the `copilot-setup-steps` job
+# before it starts, so the agent can run `npx releaseready-hooks verify` (the same check CI runs) before opening a PR;
+# templates/copilot-instructions.md tells it to.
+name: Copilot setup steps
+on: workflow_dispatch
+permissions:
+  contents: read
+  packages: read
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@releaseready"
+      - uses: ./.github/actions/install-gitleaks # test/hooks.test.js needs it
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}

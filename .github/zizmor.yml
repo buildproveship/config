@@ -3,9 +3,17 @@ rules:
     ignore:
       # Reason: we publish to GitHub Packages (npm.pkg.github.com), which has no OIDC trusted publishing; the
       # GITHUB_TOKEN with packages: write is the supported credential.
-      - release.yml:34
+      - release.yml:36
   self-repository:
     ignore:
       # Reason: "$/..." is rejected by the semgrep github-actions-mutable-action-tag rule, which wants @sha; the
       # local "./" path is the form every tool understands.
-      - pr.yml:38
+      - pr.yml:26
+      - pr.yml:40
+      - release.yml:32
+      - copilot-setup-steps.yml:23
+  github-env:
+    ignore:
+      # Reason: the step puts a directory it just created under $RUNNER_TEMP, holding one checksum-verified gitleaks
+      # binary, on the PATH. No input from a pull request reaches the path or the download.
+      - action.yml:14

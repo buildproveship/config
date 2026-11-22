@@ -85,6 +85,62 @@ Weekly (Monday before 06:00 Hong Kong time), 3-day minimum release age, pinned v
 non-major dev updates, one group for lint/format/typecheck tooling, security updates at any time. Renovate needs the
 [Renovate GitHub App](https://github.com/apps/renovate) installed on the `releaseready` organisation.
 
+## Local quality gates and CI
+
+Nothing should reach GitHub unless it passes on the developer's machine, so CI only confirms. One `prepare` line installs
+three [Husky](https://typicode.github.io/husky/) hooks, each a script in [`hooks/`](hooks):
+
+```sh
+npm install --save-dev @releaseready/config
+npm pkg set scripts.prepare="releaseready-hooks install"
+npm install # runs prepare; commit the generated .husky/ files
+```
+
+`gitleaks` must be on the PATH (`brew install gitleaks`; in CI use [`install-gitleaks`](.github/actions/install-gitleaks)). `install` does nothing when `CI` or `HUSKY=0` is set.
+
+| Hook         | Runs                                                                                                                                                                             | Budget  |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `pre-commit` | lint-staged (ESLint `--fix` and Prettier on staged files; a repo's own lint-staged config wins over [the shared one](hooks/lint-staged.config.js)), then `gitleaks git --staged` | ~10 s   |
+| `commit-msg` | the subject must match `^[A-Z][A-Z0-9]+-\d+: ` (any Jira project key, for example `RRDPLAT-104: add hooks`), so the commit shows in the ticket's Development panel               | instant |
+| `pre-push`   | blocks pushes to `main`; fetches `origin/main` and requires the branch to be rebased on it; then the `typecheck` script and the tests affected by the change                     | ~2 min  |
+
+`pre-push` tests the working tree, so it only accepts the checked-out branch (one branch per push) with no uncommitted
+changes to tracked files. A moved file counts at both ends: moving `src/a.ts` into `docs/` still runs the tests.
+
+A hook prints how long it took and warns when it is over budget; the warning never fails the push.
+
+Affected tests: `pre-push` runs the repo's `test:affected` script with the changed files as arguments (for Vitest,
+`"test:affected": "vitest related --run"`). A repo without that script runs its `test` script, which must fit the budget.
+A change that touches only `*.md`, `docs/` or `LICENSE` skips type-check and tests. Full E2E is never in a hook: run
+`npm run check:full`.
+
+`npx releaseready-hooks verify` runs `npm run check`, the same command CI runs.
+
+### `--no-verify`
+
+`git commit --no-verify` and `git push --no-verify` skip every hook above. **Agents must never use them**, never disable
+or edit a hook, and never push to `main`; a failing hook is fixed at its cause. The shared agent rules say so
+(`templates/copilot-instructions.md`). A person may use it only to save work in progress on a branch nobody has asked to review, and CI and review still apply.
+
+### CI workflows
+
+`npm ci` installs `@releaseready/config` from GitHub Packages, so the callers grant `packages: read` and the workflows pass
+`github.token` as `NODE_AUTH_TOKEN`. Call these from the repo's own workflows with the templates in [`templates/workflows/`](templates/workflows), pinned to
+the full commit sha of a release tag:
+
+- [`reusable-ci.yml`](.github/workflows/reusable-ci.yml): runs for ready pull requests and `main` (drafts are skipped; the
+  caller adds `ready_for_review`), one run per PR (`cancel-in-progress`), docs-only PRs skip the checks
+  (`docs-only-pattern`), caches npm and, with `cache-paths`, build output. The required status check is the job `ci`; a
+  skipped run counts as passed. It runs `check-command` (default `npx releaseready-hooks verify`).
+- [`reusable-nightly.yml`](.github/workflows/reusable-nightly.yml): the full E2E (`npm run check:full`) on a schedule.
+- [`templates/copilot-setup-steps.yml`](templates/copilot-setup-steps.yml): the Copilot coding agent's environment
+  (Node and `npm ci`). The agent rules tell it to run `npx releaseready-hooks verify` before it opens a pull request.
+
+The `runner` input defaults to the self-hosted `rr-local` runner, which costs no Actions minutes. **Pull requests from
+forks always run on `ubuntu-24.04`**: this repo and its consumers can be public, and the self-hosted runner must never
+execute a stranger's code. The nightly workflow never runs for pull requests. Pass `runner: ubuntu-24.04` to run
+everything hosted.
+
 ## Guardrails and the code-quality skill
 
 `releaseready-guardrails` is the mechanical half of the

@@ -24,3 +24,9 @@ This is the owner's standing rule for every project. A project's own rules may a
 - **Label drafts.** Say "draft" or "proposal" wherever an unapproved design appears. Never describe a design as approved, shipped or live without a recorded approval. Previews and prototypes made to get a design reviewed count as design work, not implementation. They use synthetic data and say they are previews.
 - **Approval is the owner's.** Silence, a green build, a merged pull request or an agent's own review is not approval. When a design is ready for review, say where it is and what is waiting for approval.
 - **No approved design, no implementation.** If asked to implement something that has no approved design, add the design to the library first, mark it for review, and report that implementation is waiting on approval. Fixing a bug that does not change a design is not covered.
+
+## Local quality gates
+
+- Git hooks (Husky, from `@releaseready/config`) check every commit and push: lint and secrets on commit, a Jira key (`RRDPLAT-123: what changed`) in the commit subject, and a branch rebased on `origin/main` with passing type-check and affected tests on push.
+- **Agents never use `--no-verify`, never disable a hook and never push to `main`.** If a hook fails, fix the cause. If a hook itself looks wrong, stop and say so in the pull request.
+- Before opening a pull request, run `npx releaseready-hooks verify` (the same check CI runs) and report the result.

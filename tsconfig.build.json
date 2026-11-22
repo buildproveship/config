@@ -17,6 +17,7 @@
     "dotenv.js",
     "allure.js",
     "guardrails/*.js",
+    "hooks/*.js",
     "modules.d.ts"
   ]
 }

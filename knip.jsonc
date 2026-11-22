@@ -4,4 +4,7 @@
   "ignore": ["test/fixtures/**"],
   // jscpd is started by path from guardrails/index.js (binPath), which knip cannot see.
   "ignoreDependencies": ["jscpd"],
+  // gitleaks is a system binary: the pre-commit hook runs it and test/hooks.test.js needs it installed (brew, or the
+  // pinned download in the security-scan action).
+  "ignoreBinaries": ["gitleaks"],
 }
