@@ -14,6 +14,7 @@ The check command is `npm run check`; it runs `npm run check:guardrails`, which 
 
 ## Working here
 
+- Git hooks (`.husky/`, from `hooks/`) run on every commit and push. Never use `--no-verify`, never edit a hook to get past it, never push to `main`.
 - The skill's source is `skill/releaseready-code-quality/`. Edit it there, then run `node guardrails/cli.js sync` so
   this repo's own copy under `skills/` matches; consumers get it with `npx releaseready-guardrails sync` after
   upgrading.

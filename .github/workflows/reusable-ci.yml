@@ -1,0 +1,105 @@
+# Lean CI for every releaseready repo, called from the repo's own pr.yml (see templates/workflows/pr.yml). The local
+# hooks (Husky: pre-commit, commit-msg, pre-push) are the first gate; this is the second, so it only has to confirm.
+#
+# Cost rules (cap: $10/month of GitHub Actions):
+#   - drafts are skipped; the caller also triggers on ready_for_review, so marking ready starts the run
+#   - docs-only PRs skip the checks; the required job `ci` still reports (skipped counts as passed)
+#   - one run per PR (cancel-in-progress), dependencies and build output cached
+#   - the default runner is the self-hosted `rr-local` (RRDPLAT-104). Fork PRs never get it: a public repo would
+#     otherwise run a stranger's code on the owner's Mac, so they run on a GitHub-hosted runner instead.
+# Callers grant: permissions: { contents: read, pull-requests: read }.
+name: Reusable CI
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner label for same-repo PRs and main. Fork PRs always use ubuntu-24.04.
+        type: string
+        default: rr-local
+      node-version-file:
+        type: string
+        default: .nvmrc
+      check-command:
+        description: The one required check; the same command developers run as `npm run check`.
+        type: string
+        default: npx --no-install releaseready-hooks verify
+      docs-only-pattern:
+        description: Extended regex; a PR whose changed files all match it skips the checks.
+        type: string
+        default: '^(.*\.md|docs/.*|LICENSE)$'
+      cache-paths:
+        description: Build output to cache between runs, one path per line. Empty means no build cache.
+        type: string
+        default: ""
+      cache-key-files:
+        description: Glob of the files whose hash keys the build cache.
+        type: string
+        default: "src/**"
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  changes:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner }}
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      docs_only: ${{ steps.diff.outputs.docs_only }}
+    steps:
+      - id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          PATTERN: ${{ inputs.docs-only-pattern }}
+        run: |
+          set -euo pipefail
+          docs_only=false
+          if [ "$EVENT" = "pull_request" ]; then
+            files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -Evq "$PATTERN"; then docs_only=true; fi
+          fi
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+  checks:
+    needs: changes
+    if: ${{ needs.changes.outputs.docs_only != 'true' }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: ${{ inputs.node-version-file }}
+          cache: npm
+      - name: Restore build output
+        if: ${{ inputs.cache-paths != '' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ inputs.cache-paths }}
+          key: build-${{ runner.os }}-${{ hashFiles(inputs.cache-key-files, 'package-lock.json') }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Required check
+        env:
+          CHECK_COMMAND: ${{ inputs.check-command }}
+        run: eval "$CHECK_COMMAND"
+  # The one required status check in branch protection. Skipped (draft, docs-only) counts as passed.
+  ci:
+    needs: [changes, checks]
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || !github.event.pull_request.draft) }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner }}
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          case " $RESULTS " in
+            *" failure "*|*" cancelled "*) echo "A required job did not pass: $RESULTS" >&2; exit 1 ;;
+          esac

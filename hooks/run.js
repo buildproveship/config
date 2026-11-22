@@ -1,0 +1,54 @@
+import { spawnSync } from "node:child_process";
+
+/**
+ * Run a command with inherited output.
+ * @param {string} command
+ * @param {string[]} args
+ * @param {{ cwd?: string }} [options]
+ * @returns {number} the exit status; a command that cannot start counts as 1
+ */
+export function run(command, args, options = {}) {
+  console.error(`> ${[command, ...args].join(" ")}`);
+  const result = spawnSync(command, args, {
+    stdio: "inherit",
+    cwd: options.cwd,
+  });
+  if (result.error) {
+    console.error(`${command}: ${result.error.message}`);
+    return 1;
+  }
+  return result.status ?? 1;
+}
+
+/**
+ * Run a command and return its trimmed stdout.
+ * @param {string} command
+ * @param {string[]} args
+ * @param {{ cwd?: string }} [options]
+ */
+export function capture(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    encoding: "utf8",
+    cwd: options.cwd,
+  });
+  return {
+    status: result.error ? 1 : (result.status ?? 1),
+    stdout: result.stdout.trim(),
+    stderr: result.stderr.trim(),
+  };
+}
+
+/**
+ * Print how long a hook took and warn when it is over its budget. The budget is advice, never a failure.
+ * @param {string} hook
+ * @param {number} startedAt Date.now() when the hook started
+ * @param {number} budgetSeconds
+ */
+export function reportTime(hook, startedAt, budgetSeconds) {
+  const seconds = Math.round((Date.now() - startedAt) / 1000);
+  const note =
+    seconds > budgetSeconds
+      ? ` (over the ${budgetSeconds} s budget: tell the platform team)`
+      : "";
+  console.error(`${hook}: ${seconds} s${note}`);
+}
