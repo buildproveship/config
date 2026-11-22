@@ -565,6 +565,104 @@ function scannerPatterns(repo) {
 }
 
 /**
+ * Comments in JS/TS source, skipping string and template literals so a `//` inside a string (a URL) does not hide a
+ * real comment later on the line. Regex literals are not modelled.
+ *
+ * @param {string} source
+ * @returns {{ index: number, raw: string }[]}
+ */
+function commentsOf(source) {
+  /** @type {{ index: number, raw: string }[]} */
+  const out = [];
+  let i = 0;
+  while (i < source.length) {
+    const c = source[i];
+    if (c === '"' || c === "'" || c === "`") {
+      i++;
+      while (i < source.length && source[i] !== c) {
+        if (source[i] === "\\") i++;
+        else if (c !== "`" && source[i] === "\n") break;
+        i++;
+      }
+      i++;
+    } else if (source.startsWith("//", i)) {
+      const end = source.indexOf("\n", i);
+      const stop = end === -1 ? source.length : end;
+      out.push({ index: i, raw: source.slice(i, stop) });
+      i = stop;
+    } else if (source.startsWith("/*", i)) {
+      const end = source.indexOf("*/", i + 2);
+      const stop = end === -1 ? source.length : end + 2;
+      out.push({ index: i, raw: source.slice(i, stop) });
+      i = stop;
+    } else i++;
+  }
+  return out;
+}
+
+/**
+ * Nov 2026 audit: a suppression or a hand-indexed `process.argv` keeps coming back.
+ * A suppression is fine with a reason (`-- why` for ESLint, text after `@ts-expect-error`, or a comment on the line above).
+ *
+ * @type {Rule}
+ */
+function suppressionsAndArgv(repo) {
+  const jsGlob = "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}";
+  const directive =
+    /^(eslint-disable(?:-next-line|-line)?|@ts-ignore|@ts-expect-error)(?![\w-])([\s\S]*)$/;
+  /** @param {string} raw */
+  const body = (raw) =>
+    raw.startsWith("//") ? raw.slice(2) : raw.slice(2, -2).replace(/^\*+/, "");
+  const explains = /\p{L}{3}/u;
+  /** @type {Finding[]} */
+  const findings = [];
+  for (const path of repo.paths.filter(
+    (p) => matches(p, jsGlob) && !matches(p, skillCopies),
+  )) {
+    // Every JS/TS line terminator (CRLF, CR, U+2028, U+2029) becomes LF, so line numbers match countSourceLines.
+    const source = repo.read(path).replace(/\r\n|[\r\u2028\u2029]/g, "\n");
+    const lines = source.split("\n");
+    /** @param {number} offset */
+    const lineOf = (offset) => source.slice(0, offset).split("\n").length;
+    for (const { index, raw } of commentsOf(source)) {
+      const found = directive.exec(body(raw).trim());
+      if (!found) continue;
+      const rest = found[2] ?? "";
+      const inline = found[1]?.startsWith("eslint")
+        ? /--\s+[\s\S]*\p{L}{3}/u.test(rest)
+        : explains.test(rest);
+      const line = lineOf(index);
+      const above = (lines[line - 2] ?? "").trim();
+      const explained =
+        /^(?:\/\/|\/\*|\*)/.test(above) &&
+        !directive.test(body(above).trim()) &&
+        explains.test(above);
+      if (!inline && !explained) {
+        findings.push({
+          rule: "suppression-without-reason",
+          path,
+          line,
+          message: `${found[1]} without a reason: fix the code, or say why (\`-- reason\` for eslint-disable, text after @ts-expect-error; replace @ts-ignore)`,
+          text: raw,
+        });
+      }
+    }
+    for (const match of source.matchAll(/\bprocess\.argv\s*\[\s*\d+\s*\]/g)) {
+      const line = lineOf(match.index);
+      findings.push({
+        rule: "argv-index",
+        path,
+        line,
+        message:
+          "process.argv[<n>] indexing: parse arguments with node:util parseArgs (or commander / yargs)",
+        text: lines[line - 1] ?? "",
+      });
+    }
+  }
+  return findings;
+}
+
+/**
  * Standard 1: RR-03, RR-04, TM-11, TM-12, UPF-01, UPF-02, FUI-17. Deprecated, legacy and compatibility code.
  *
  * @type {Rule}
@@ -783,6 +881,7 @@ export const rules = [
   copiedCode,
   legacyMarkers,
   scannerPatterns,
+  suppressionsAndArgv,
   skippedTests,
   eslintConfigOverrides,
   readmeHistory,

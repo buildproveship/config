@@ -325,6 +325,92 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
+  test("suppressions need a reason; process.argv indexing fails", async () => {
+    const hits = await rulesHit({
+      "src/a.ts": [
+        "// eslint-disable-next-line no-console",
+        "// eslint-disable-next-line no-console -- CLI prints results",
+        "// eslint-disable-next-line no-console -- a CLI prints results",
+        "// @ts-ignore",
+        "// @ts-expect-error vendor typings are wrong",
+        "// Vendor typings omit this field.",
+        "// @ts-ignore",
+        "/* eslint-disable no-console */",
+        "const file = process.argv[2];",
+        "const rest = process.argv.slice(2);",
+        "",
+      ].join("\n"),
+    });
+    assert.deepEqual(hits.sort(), [
+      "argv-index src/a.ts:9",
+      "suppression-without-reason src/a.ts:1",
+      "suppression-without-reason src/a.ts:4",
+      "suppression-without-reason src/a.ts:8",
+    ]);
+  });
+
+  test("suppressions: block comments and every line terminator are scanned", async () => {
+    const hits = await rulesHit({
+      "src/b.ts": "/*\n eslint-disable no-console\n*/\nconst a = 1;\n",
+      "src/c.ts": "/*\n eslint-disable no-console -- a CLI prints\n*/\n",
+      "src/d.ts": "const a = 1;\r\n// eslint-disable-next-line x\r\nf();\r\n",
+      "src/e.ts": "const a = 1;\r// eslint-disable-next-line x\rf();\r",
+      "src/f.ts": "const a = 1;\u2028// @ts-ignore\u2029f();\n",
+      "src/g.ts": "/* eslint-disable x\n   -- the reason is here */\n",
+    });
+    assert.deepEqual(hits.sort(), [
+      "suppression-without-reason src/b.ts:1",
+      "suppression-without-reason src/d.ts:2",
+      "suppression-without-reason src/e.ts:2",
+      "suppression-without-reason src/f.ts:2",
+    ]);
+  });
+
+  test("suppressions: strings, non-English reasons, multiline argv and block-comment text", async () => {
+    const hits = await rulesHit({
+      "src/h.ts":
+        'const url = "https://example.com"; // eslint-disable-line no-console\n',
+      "src/i.ts":
+        "// eslint-disable-next-line no-console -- 修复上游类型\n// @ts-expect-error 供应商类型错误\n",
+      "src/j.ts": "const file = process.argv[\n  2\n];\n",
+      "src/k.ts":
+        'const s = "a // b";\nconst t = `// eslint-disable-line x`;\n',
+    });
+    assert.deepEqual(hits.sort(), [
+      "argv-index src/j.ts:1",
+      "suppression-without-reason src/h.ts:1",
+    ]);
+    const allowed = await repo({
+      "src/b.ts": "/*\n eslint-disable no-console\n*/\n",
+      "releaseready-guardrails.json": JSON.stringify({
+        allow: [
+          {
+            rule: "suppression-without-reason",
+            path: "src/b.ts",
+            match: "eslint-disable no-console",
+            reason: "multiline directive is matched on its full text",
+          },
+        ],
+      }),
+    });
+    assert.deepEqual(
+      applyAllowlist(await findAll(allowed), loadConfig(allowed).allow ?? [])
+        .reported,
+      [],
+    );
+  });
+
+  test("suppression-without-reason and argv-index: an allow entry needs a reason", async () => {
+    for (const rule of ["suppression-without-reason", "argv-index"]) {
+      const noReason = await repo({
+        "releaseready-guardrails.json": JSON.stringify({
+          allow: [{ rule, path: "src/a.ts" }],
+        }),
+      });
+      assert.throws(() => loadConfig(noReason), /reason/);
+    }
+  });
+
   test("scanner patterns: runtime assert and literal /tmp outside tests", async () => {
     const hits = await rulesHit({
       "control/run.py":
