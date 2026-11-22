@@ -103,6 +103,14 @@ The rules, the allowlist format (`releaseready-guardrails.json`, validated by
 [the checks reference](skill/releaseready-code-quality/references/checks.md). The skill's repo copy must equal the
 published one (`skill-drift`), so it changes only here.
 
+## Shared test setup
+
+For the WebdriverIO and Playwright frameworks (appium2, UPF); synthetic values only, no secrets.
+
+- `@releaseready/config/dotenv`: `loadEnv({ path?, processEnv? })` reads a `.env` file into `process.env` (dotenv; values already set win; a missing file is fine) and returns what the file held.
+- `@releaseready/config/allure`: `allureReporter(options?)` returns the `["allure", { outputDir: "allure-results", ...options }]` reporter tuple: `reporters: ["spec", allureReporter()]`. The repo installs `@wdio/allure-reporter` itself.
+- `@releaseready/config/templates/AGENTS.md`, `CLAUDE.md` and `copilot-instructions.md`: the shared agent rule files (test classification, design before implementation). Copy them into the repo once, then add repo-specific rules above the shared sections; fill in the check command in the AGENTS.md and CLAUDE.md code-quality block.
+
 ## Security scanners
 
 `.github/actions/security-scan` runs gitleaks (full git history), trivy fs (vuln, secret, misconfig; HIGH and CRITICAL,

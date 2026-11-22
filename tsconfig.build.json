@@ -11,5 +11,12 @@
     "rootDir": ".",
     "types": ["node"]
   },
-  "include": ["eslint.js", "prettier.js", "guardrails/*.js", "modules.d.ts"]
+  "include": [
+    "eslint.js",
+    "prettier.js",
+    "dotenv.js",
+    "allure.js",
+    "guardrails/*.js",
+    "modules.d.ts"
+  ]
 }

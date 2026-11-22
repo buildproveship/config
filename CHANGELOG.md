@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## 4.1.0 (prepared, not yet released)
 
+New, no change to existing exports:
+
+- `@releaseready/config/dotenv` (`loadEnv`), `@releaseready/config/allure` (`allureReporter`) and `@releaseready/config/templates/*` (AGENTS.md, CLAUDE.md, copilot-instructions.md). Adds `dotenv` as a dependency (RRDSCRUM-420).
 - `security-scan`: new step fails when tracked TypeScript uses `satisfies` as an identifier. Semgrep 1.186.0 still skips such lines (PartialParsing) without failing `--error`. Consumers can delete their own copy of this check (RRDSCRUM-395).
 
 ## 4.0.0 (2026-11-22)

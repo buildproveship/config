@@ -1,6 +1,6 @@
 {
   "name": "@releaseready/config",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Shared ESLint flat config, Prettier config, strict tsconfig base, Renovate preset, the releaseready-guardrails checker and the releaseready-code-quality skill for releaseready repos.",
   "license": "Apache-2.0",
   "type": "module",
@@ -24,7 +24,10 @@
     "default.json",
     "guardrails/*.js",
     "guardrails/config.schema.json",
-    "skill"
+    "skill",
+    "dotenv.js",
+    "allure.js",
+    "templates"
   ],
   "exports": {
     "./eslint": {
@@ -37,6 +40,17 @@
     },
     "./tsconfig.json": "./tsconfig.json",
     "./renovate": "./default.json",
+    "./dotenv": {
+      "types": "./types/dotenv.d.ts",
+      "default": "./dotenv.js"
+    },
+    "./allure": {
+      "types": "./types/allure.d.ts",
+      "default": "./allure.js"
+    },
+    "./templates/AGENTS.md": "./templates/AGENTS.md",
+    "./templates/CLAUDE.md": "./templates/CLAUDE.md",
+    "./templates/copilot-instructions.md": "./templates/copilot-instructions.md",
     "./package.json": "./package.json",
     "./guardrails": {
       "types": "./types/guardrails/index.d.ts",
@@ -75,6 +89,7 @@
     "@eslint-react/eslint-plugin": "5.30.4",
     "@eslint/js": "10.0.1",
     "ajv": "8.20.0",
+    "dotenv": "18.0.10",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-jsx-a11y-x": "0.2.0",
     "eslint-plugin-no-only-tests": "3.4.0",
