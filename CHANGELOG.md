@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.1.0 (prepared, not yet released)
+## 4.1.0 (2026-11-22)
 
 New, no change to existing exports:
 
