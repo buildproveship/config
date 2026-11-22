@@ -221,6 +221,7 @@ test("the delivery rules section comes from templates/AGENTS.md, links both page
   assert.match(change?.after ?? "", /Own text\.\n\n## Delivery rules\n/);
   assert.match(change?.after ?? "", /pages\/27328513/);
   assert.match(change?.after ?? "", /pages\/27230233/);
+  assert.match(change?.after ?? "", /pages\/26411190/);
   assert.match(change?.after ?? "", /\*\*Agent brief\*\*/);
   const section = (change?.after ?? "").split("## Delivery rules")[1] ?? "";
   assert.ok(section.trim().split("\n").length <= 10, "at most 10 lines");
