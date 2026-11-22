@@ -17,15 +17,18 @@
     },
     {
       "name": "test-management",
-      "private": true
+      "private": true,
+      "checkCommand": "npm run typecheck && npm run build && npm run lint && npm run check:guardrails && npm run format:check && npm test && npm run contracts:setup && npm run contract:check && npm run test:forge-app"
     },
     {
       "name": "test-data-management",
-      "private": true
+      "private": true,
+      "checkCommand": "npm run contracts:setup && npm run dependencies:check && npm run openapi:check && npm run format:check && npm run lint && npm run check:guardrails && npm run typecheck && npm run build && npm test"
     },
     {
       "name": "universal-api-framework",
-      "private": false
+      "private": false,
+      "checkCommand": "npm run typecheck && npm run lint && npm run format:check && npm run check:guardrails && npm test"
     },
     {
       "name": "universal-appium-framework",
@@ -34,7 +37,8 @@
     },
     {
       "name": "universal-playwright-framework",
-      "private": false
+      "private": false,
+      "checkCommand": "npm run build && npm run typecheck && npm run lint && npm run format:check && npm run check:guardrails && npm run test:unit"
     },
     {
       "name": "observability",
