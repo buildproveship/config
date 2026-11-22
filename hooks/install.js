@@ -4,7 +4,7 @@ import { join, relative } from "node:path";
 import husky from "husky";
 
 const CLI = fileURLToPath(new URL("./cli.js", import.meta.url));
-const HOOKS = ["pre-commit", "commit-msg", "pre-push"];
+export const HOOKS = ["pre-commit", "commit-msg", "pre-push"];
 
 /**
  * Point git at Husky's hooks and write one `.husky/<hook>` file per shared hook. Meant for `"prepare"`.
