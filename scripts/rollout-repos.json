@@ -1,7 +1,11 @@
 {
   "release": "v4.2.0",
   "repos": [
-    { "name": "ReleaseReady", "private": true },
+    {
+      "name": "ReleaseReady",
+      "private": true,
+      "checkCommand": "npm run contracts:setup && NODE_OPTIONS=--max-old-space-size=8192 npm run check"
+    },
     {
       "name": "frontend-ui",
       "private": true,
