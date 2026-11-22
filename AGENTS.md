@@ -21,3 +21,10 @@ The check command is `npm run check`; it runs `npm run check:guardrails`, which 
 - A new error-level rule (ESLint or guardrails) is a major release; a fix or a narrower rule is a minor or patch.
   Measure a new rule against every consumer repo before releasing it, and list the counts in the PR.
 - Release: bump `version`, add a `CHANGELOG.md` entry, merge, push tag `vX.Y.Z` on `main`.
+
+## Delivery rules
+
+- Rules for people and agents: [How we work](https://noisegatemusicstudios.atlassian.net/wiki/spaces/RRDOCS/pages/27328513) and [Reuse first](https://noisegatemusicstudios.atlassian.net/wiki/spaces/RRDOCS/pages/27230233).
+- Read only the ticket's **Agent brief** first ([template](https://noisegatemusicstudios.atlassian.net/wiki/spaces/RRDOCS/pages/26411190): Goal, Files, Done when, Blocked by/Reuses, Model); history and background are in the comments.
+- Before you create a ticket, a branch or a helper, search Jira and the Reuse first list, then extend or link what exists.
+- Fetch and rebase on `origin/main` before every push, open draft pull requests, and run the checks locally before CI.
