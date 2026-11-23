@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.2.1 (2026-11-23)
+
+Skill text only, no change to exports (RRDSCRUM-484):
+
+- `releaseready-code-quality` smell → fix table: new row for linking or building from a design copy, an old Library or memory. The Design Library hub is the design source of truth, and the hub wins over code, repo records and Confluence (owner ruling, 23 Nov 2026).
+
 ## 4.2.0 (2026-11-22)
 
 New, no change to existing exports (RRDPLAT-104):
