@@ -79,6 +79,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The checkout is shallow and has no origin/main. Checks that compare against the merge target
+      # (OpenAPI compatibility, case-identity baseline) read refs/remotes/origin/main, and a reused
+      # runner workspace can hold a stale one, so always refresh it. The token is passed for this one
+      # command only (persist-credentials stays false).
+      - name: Fetch the default branch as origin/main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+            fetch --no-tags --depth=1 origin "+refs/heads/$BASE:refs/remotes/origin/$BASE"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: ${{ inputs.node-version-file }}

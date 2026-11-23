@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Workflow only, no change to exports: `reusable-ci.yml` fetches the default branch as `origin/<branch>` before the check command (the shallow checkout had none; a reused self-hosted workspace could hold a stale one). Fixes checks that compare with the merge target, such as the OpenAPI compatibility and case-identity baselines (BPS-22). Consumers pick it up by moving their `reusable-ci.yml@<sha>` pin.
+
 ## 5.0.0 (2026-11-23)
 
 Breaking: the package is now `@buildproveship/config` (BPS npm scope migration). The GitHub org was renamed to `buildproveship` and GitHub Packages scopes must match the org.

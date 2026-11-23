@@ -395,6 +395,22 @@ function workflow(file) {
 const FORK_GUARD =
   "${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner }}";
 
+test("the reusable CI workflow refreshes origin/<default branch> before the checks run", () => {
+  // Checks such as the OpenAPI and case-identity baselines read refs/remotes/origin/main; the shallow
+  // checkout has none, and a reused self-hosted workspace can hold a stale one.
+  const text = readFileSync(
+    join(REPO, ".github/workflows/reusable-ci.yml"),
+    "utf8",
+  );
+  const fetchAt = text.indexOf("refs/remotes/origin/$BASE");
+  assert.ok(fetchAt > 0, "fetch of the default branch is missing");
+  assert.ok(
+    fetchAt < text.indexOf("Required check"),
+    "the fetch must run before the check command",
+  );
+  assert.match(text, /persist-credentials: false/);
+});
+
 test("the reusable CI workflow keeps fork PRs off the self-hosted runner and skips drafts", () => {
   const ci = workflow(".github/workflows/reusable-ci.yml");
   const text = readFileSync(
