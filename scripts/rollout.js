@@ -92,7 +92,7 @@ function agentsNote(repo, ignoreScripts) {
   const lines = [
     AGENTS_MARKER,
     "",
-    "- Husky runs the shared hooks from `@releaseready/config` (`releaseready-hooks`): pre-commit (lint-staged, gitleaks), commit-msg (Jira key) and pre-push (never `main`, rebased, type-check, affected tests). Never use `--no-verify` or `HUSKY=0`.",
+    "- Husky runs the shared hooks from `@buildproveship/config` (`releaseready-hooks`): pre-commit (lint-staged, gitleaks), commit-msg (Jira key) and pre-push (never `main`, rebased, type-check, affected tests). Never use `--no-verify` or `HUSKY=0`.",
     ignoreScripts
       ? "- `.npmrc` sets `ignore-scripts=true`, so `prepare` does not run on `npm install`: run `npx releaseready-hooks install` once per clone."
       : "- `npm install` installs the hooks through the `prepare` script.",
@@ -137,14 +137,14 @@ export function planRepo(dir, repo, sha) {
   const release = loadRepos().release.slice(1);
   pkg.devDependencies = {
     ...pkg.devDependencies,
-    "@releaseready/config": `^${release}`,
+    "@buildproveship/config": `^${release}`,
   };
   pkg.devDependencies = Object.fromEntries(
     Object.entries(pkg.devDependencies).sort(([a], [b]) => a.localeCompare(b)),
   );
-  if (pkg.dependencies?.["@releaseready/config"])
+  if (pkg.dependencies?.["@buildproveship/config"])
     warnings.push(
-      "@releaseready/config is also in dependencies; left as is, remove one",
+      "@buildproveship/config is also in dependencies; left as is, remove one",
     );
   const prepare = "releaseready-hooks install";
   pkg.scripts ??= {};
@@ -289,7 +289,7 @@ function apply(dir, repo, changes, work) {
       mkdirSync(join(dir, path, ".."), { recursive: true });
       writeFileSync(join(dir, path), after);
     }
-  // GitHub Packages needs a token to resolve @releaseready/config, even though the package is public.
+  // GitHub Packages needs a token to resolve @buildproveship/config, even though the package is public.
   const userconfig = join(work, "npmrc");
   writeFileSync(
     userconfig,

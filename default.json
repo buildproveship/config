@@ -15,7 +15,7 @@
   "prHourlyLimit": 2,
   "rangeStrategy": "pin",
   "labels": ["dependencies"],
-  "npmrc": "@releaseready:registry=https://npm.pkg.github.com/",
+  "npmrc": "@buildproveship:registry=https://npm.pkg.github.com/",
   "hostRules": [
     {
       "matchHost": "npm.pkg.github.com",
@@ -41,15 +41,15 @@
       "groupName": "GitHub Actions"
     },
     {
-      "description": "All @releaseready/* updates in one PR, never automerged.",
-      "matchPackageNames": ["@releaseready/*"],
-      "groupName": "@releaseready packages",
+      "description": "All @buildproveship/* updates in one PR, never automerged.",
+      "matchPackageNames": ["@buildproveship/*"],
+      "groupName": "@buildproveship packages",
       "automerge": false
     },
     {
       "description": "Lint, format and type-check tooling moves together.",
       "matchPackageNames": [
-        "@releaseready/config",
+        "@buildproveship/config",
         "eslint",
         "@eslint/js",
         "typescript-eslint",

@@ -1,4 +1,4 @@
-# Copy to .github/workflows/nightly.yml. Replace <sha> with the full commit sha of the @releaseready/config release tag.
+# Copy to .github/workflows/nightly.yml. Replace <sha> with the full commit sha of the @buildproveship/config release tag.
 name: Nightly E2E
 on:
   schedule:

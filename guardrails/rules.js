@@ -181,7 +181,7 @@ function dependencySource(repo) {
             text: `${name}: ${spec}`,
           });
         } else if (
-          name.startsWith("@releaseready/") &&
+          name.startsWith("@buildproveship/") &&
           field !== "overrides" &&
           !spec.startsWith("npm:") &&
           !/^\^\d+\.\d+\.\d+(?:-[\w.]+)?$/.test(spec)
@@ -221,7 +221,7 @@ function dependencySource(repo) {
   return findings;
 }
 
-const internalScope = "@releaseready/";
+const internalScope = "@buildproveship/";
 
 /** Local folder specs (`../x`, `./x`, `/x`, `~/x`) and specs that point into build output (`…/dist`, `…/build`). */
 const localOrBuildSpec = [
@@ -266,7 +266,7 @@ function linkLeavesRepoOrIsBuildOutput(lockfilePath, resolved) {
 }
 
 /**
- * Nov 2026 review: `@releaseready/*` installed from somewhere other than the registry, in the places
+ * Nov 2026 review: `@buildproveship/*` installed from somewhere other than the registry, in the places
  * `dependency-source` does not look: an `npm:` alias, an `overrides` entry, and lockfile entries that link a local or
  * build-output folder or resolve to a release tarball. Specs `dependency-source` reports are not reported twice.
  *
@@ -284,9 +284,9 @@ function unpublishedInternalDependency(repo) {
         const leaf = trail.at(-1) ?? "";
         const key = leaf === "." ? (trail.at(-2) ?? "") : leaf;
         const target = aliasTarget(key, spec);
-        // Either side of an alias can name the internal package: "@releaseready/a": "npm:external@..." too.
+        // Either side of an alias can name the internal package: "@buildproveship/a": "npm:external@..." too.
         const internalName = key.startsWith(internalScope) ? key : target.name;
-        // dependency-source reports every non-registry spec, and every non-caret @releaseready/* key outside overrides.
+        // dependency-source reports every non-registry spec, and every non-caret @buildproveship/* key outside overrides.
         const reportedElsewhere =
           nonRegistrySpec.some((re) => re.test(spec)) ||
           (key.startsWith(internalScope) &&
@@ -317,7 +317,7 @@ function unpublishedInternalDependency(repo) {
     const packages = isRecord(lock) ? lock.packages : undefined;
     if (!isRecord(packages)) continue;
     for (const [key, entry] of Object.entries(packages)) {
-      if (!/(?:^|\/)node_modules\/@releaseready\/[^/]+$/.test(key)) continue;
+      if (!/(?:^|\/)node_modules\/@buildproveship\/[^/]+$/.test(key)) continue;
       if (!isRecord(entry) || typeof entry.resolved !== "string") continue;
       const resolved = entry.resolved;
       // A link inside the repo is a workspace member; dependency-source already reports git and file: sources.
@@ -446,10 +446,10 @@ function usesTestManagement(repo) {
   if (!repo.paths.includes("package.json")) return false;
   const pkg = readJsonc(repo, "package.json");
   if (!isRecord(pkg)) return false;
-  if (pkg.name === "@releaseready/test-management") return true;
+  if (pkg.name === "@buildproveship/test-management") return true;
   return dependencyFields.some((field) => {
     const deps = pkg[field];
-    return isRecord(deps) && "@releaseready/test-management" in deps;
+    return isRecord(deps) && "@buildproveship/test-management" in deps;
   });
 }
 
@@ -464,21 +464,21 @@ function copiedCode(repo) {
       rule: "copied-schema-primitive",
       pattern: /A-Za-z0-9\]\[A-Za-z0-9\._:-\]/,
       message:
-        "re-declared reference regex: import it from @releaseready/test-management/schema/v1",
+        "re-declared reference regex: import it from @buildproveship/test-management/schema/v1",
     },
     {
       rule: "copied-canonical-digest",
       pattern:
         /\b(?:function\s*\*?\s*|(?:const|let|var)\s+)(?:canonical(?:ize|Json|JSON|Stringify|Digest)?|stableStringify|sortedStringify)\b\s*[=(<]/,
       message:
-        "local canonical JSON/digest: import @releaseready/test-management/canonical/v1 (or the RFC 8785 `canonicalize` package where test-management is not a dependency)",
+        "local canonical JSON/digest: import @buildproveship/test-management/canonical/v1 (or the RFC 8785 `canonicalize` package where test-management is not a dependency)",
     },
     {
       rule: "copied-jwt-verifier",
       pattern:
         /\b(?:jwtVerify|createRemoteJWKSet|createLocalJWKSet)\s*\(|(?:from\s+|require\()\s*["'](?:jsonwebtoken|jwks-rsa)["']|^\s*(?:import|from)\s+jwt\b|\bjwt\.decode\(/,
       message:
-        "local JWT verification: use the verifier from @releaseready/test-management/identity/v1",
+        "local JWT verification: use the verifier from @buildproveship/test-management/identity/v1",
     },
     {
       rule: "hand-written-archive-parser",
@@ -494,13 +494,13 @@ function copiedCode(repo) {
             rule: "copied-schema-primitive",
             pattern: /\[(?:[0-9a-fA-F]|\\d|-){3,10}\]\{8\}-/,
             message:
-              "hand-written UUID regex: import the uuid primitive from @releaseready/test-management/schema/v1",
+              "hand-written UUID regex: import the uuid primitive from @buildproveship/test-management/schema/v1",
           },
           {
             rule: "copied-schema-primitive",
             pattern: /\[(?:[0-9a-fA-F]|\\d|-){3,10}\]\{64\}/,
             message:
-              "hand-written SHA-256 digest regex: import the digest primitive from @releaseready/test-management/schema/v1",
+              "hand-written SHA-256 digest regex: import the digest primitive from @buildproveship/test-management/schema/v1",
           },
         ]
       : []),

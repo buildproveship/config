@@ -1,4 +1,4 @@
-# Copy to .github/workflows/pr.yml. Replace <sha> with the full commit sha of the @releaseready/config release tag.
+# Copy to .github/workflows/pr.yml. Replace <sha> with the full commit sha of the @buildproveship/config release tag.
 # No `paths-ignore` here: a required check that never starts stays pending, so docs-only PRs are skipped inside the
 # workflow, where the required job `ci` still reports.
 name: Pull request

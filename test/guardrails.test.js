@@ -48,7 +48,7 @@ describe("releaseready-guardrails rules", () => {
     assert.deepEqual(
       await rulesHit({
         "package.json": JSON.stringify({
-          dependencies: { "@releaseready/ui-web": "^0.9.0", ajv: "8.20.0" },
+          dependencies: { "@buildproveship/ui-web": "^0.9.0", ajv: "8.20.0" },
         }),
         "src/a.ts": "export const a = 1;\n",
       }),
@@ -66,7 +66,7 @@ describe("releaseready-guardrails rules", () => {
             c: "file:../c",
             d: "./vendor/d-1.0.0.tgz",
             e: "releaseready/e",
-            "@releaseready/tokens": "0.2.0",
+            "@buildproveship/tokens": "0.2.0",
           },
           overrides: { f: { g: "https://example.com/g.tgz" } },
         },
@@ -82,19 +82,19 @@ describe("releaseready-guardrails rules", () => {
     );
   });
 
-  test("unpublished-internal-dependency: @releaseready/* from a local or build-output folder, a link or a tarball", async () => {
+  test("unpublished-internal-dependency: @buildproveship/* from a local or build-output folder, a link or a tarball", async () => {
     const hits = await rulesHit({
       "package.json": JSON.stringify(
         {
           dependencies: {
-            "@releaseready/a": "../a/dist",
-            "@releaseready/v": "npm:@releaseready/v@../v",
-            "rr-d": "npm:@releaseready/d@../d/dist",
-            "rr-e": "npm:@releaseready/e@github:releaseready/e",
-            "@releaseready/ok": "^1.2.0",
-            "rr-ok": "npm:@releaseready/ok@^1.2.0",
+            "@buildproveship/a": "../a/dist",
+            "@buildproveship/v": "npm:@buildproveship/v@../v",
+            "rr-d": "npm:@buildproveship/d@../d/dist",
+            "rr-e": "npm:@buildproveship/e@github:releaseready/e",
+            "@buildproveship/ok": "^1.2.0",
+            "rr-ok": "npm:@buildproveship/ok@^1.2.0",
           },
-          overrides: { "@releaseready/f": "../f/dist" },
+          overrides: { "@buildproveship/f": "../f/dist" },
         },
         null,
         2,
@@ -103,23 +103,23 @@ describe("releaseready-guardrails rules", () => {
         {
           lockfileVersion: 3,
           packages: {
-            "node_modules/@releaseready/g": {
+            "node_modules/@buildproveship/g": {
               resolved: "../g/dist",
               link: true,
             },
-            "node_modules/@releaseready/h": {
+            "node_modules/@buildproveship/h": {
               resolved:
                 "https://github.com/buildproveship/h/releases/download/v1.0.0/h-1.0.0.tgz",
             },
-            "node_modules/@releaseready/ws": {
+            "node_modules/@buildproveship/ws": {
               resolved: "packages/ws",
               link: true,
             },
-            "node_modules/@releaseready/reg": {
+            "node_modules/@buildproveship/reg": {
               resolved:
-                "https://npm.pkg.github.com/download/@releaseready/reg/1.0.0/abc",
+                "https://npm.pkg.github.com/download/@buildproveship/reg/1.0.0/abc",
             },
-            "node_modules/@releaseready/git": {
+            "node_modules/@buildproveship/git": {
               resolved:
                 "git+ssh://git@github.com/buildproveship/git.git#abc1234",
             },
@@ -140,7 +140,7 @@ describe("releaseready-guardrails rules", () => {
         "unpublished-internal-dependency package-lock.json:8",
       ],
     );
-    // A direct non-caret @releaseready/* spec and git sources stay dependency-source's, so nothing is reported twice.
+    // A direct non-caret @buildproveship/* spec and git sources stay dependency-source's, so nothing is reported twice.
     assert.deepEqual(
       hits.filter((h) => h.startsWith("dependency-source")),
       [
@@ -154,15 +154,15 @@ describe("releaseready-guardrails rules", () => {
     const hits = await rulesHit({
       "package.json": JSON.stringify({
         workspaces: ["packages/*"],
-        dependencies: { "@releaseready/ui-web": "^0.9.0" },
+        dependencies: { "@buildproveship/ui-web": "^0.9.0" },
       }),
       "package-lock.json": JSON.stringify({
         packages: {
-          "node_modules/@releaseready/ui-web": {
+          "node_modules/@buildproveship/ui-web": {
             resolved:
-              "https://npm.pkg.github.com/download/@releaseready/ui-web/0.9.0/abc",
+              "https://npm.pkg.github.com/download/@buildproveship/ui-web/0.9.0/abc",
           },
-          "node_modules/@releaseready/ws": {
+          "node_modules/@buildproveship/ws": {
             resolved: "packages/ws",
             link: true,
           },
@@ -176,8 +176,10 @@ describe("releaseready-guardrails rules", () => {
     const hits = await rulesHit({
       "package.json": JSON.stringify(
         {
-          dependencies: { "@releaseready/k": "npm:external@../external/dist" },
-          overrides: { "@releaseready/n": { ".": "../n/dist" } },
+          dependencies: {
+            "@buildproveship/k": "npm:external@../external/dist",
+          },
+          overrides: { "@buildproveship/n": { ".": "../n/dist" } },
         },
         null,
         2,
@@ -197,14 +199,14 @@ describe("releaseready-guardrails rules", () => {
       // A nested lockfile linking a sibling workspace member stays inside the repository and passes.
       "packages/a/package-lock.json": JSON.stringify({
         packages: {
-          "node_modules/@releaseready/b": { resolved: "../b", link: true },
+          "node_modules/@buildproveship/b": { resolved: "../b", link: true },
         },
       }),
       // A root lockfile link that normalises outside the repository is reported.
       "package-lock.json": JSON.stringify(
         {
           packages: {
-            "node_modules/@releaseready/out": {
+            "node_modules/@buildproveship/out": {
               resolved: "packages/../../outside",
               link: true,
             },
@@ -241,7 +243,7 @@ describe("releaseready-guardrails rules", () => {
       "package.json": JSON.stringify(
         {
           scripts: {
-            a: "npm run build:recipes --prefix node_modules/@releaseready/test-data-management",
+            a: "npm run build:recipes --prefix node_modules/@buildproveship/test-data-management",
             b: "tsc -p node_modules/x/tsconfig.json",
             c: "node_modules/.bin/tsc -p tsconfig.json",
           },
@@ -292,7 +294,7 @@ describe("releaseready-guardrails rules", () => {
     const hits = await rulesHit({
       ...source,
       "package.json": JSON.stringify({
-        dependencies: { "@releaseready/test-management": "^0.2.0" },
+        dependencies: { "@buildproveship/test-management": "^0.2.0" },
       }),
     });
     assert.deepEqual(hits, [

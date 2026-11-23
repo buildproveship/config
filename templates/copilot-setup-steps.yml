@@ -19,7 +19,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           registry-url: https://npm.pkg.github.com
-          scope: "@releaseready"
+          scope: "@buildproveship"
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}

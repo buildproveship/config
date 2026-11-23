@@ -2,7 +2,7 @@
 //
 //   // eslint.config.js
 //   import { defineConfig } from "eslint/config";
-//   import { releaseready } from "@releaseready/config/eslint";
+//   import { releaseready } from "@buildproveship/config/eslint";
 //   export default defineConfig(
 //     releaseready({ tsconfigRootDir: import.meta.dirname, react: true }),
 //     { ignores: ["generated/**"] }, // repo-specific additions, each with a reason

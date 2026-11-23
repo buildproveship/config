@@ -8,7 +8,7 @@
 #   - the default runner is the self-hosted `rr-local` (RRDPLAT-104). Fork PRs never get it: a public repo would
 #     otherwise run a stranger's code on the owner's Mac, so they run on a GitHub-hosted runner instead.
 # Callers grant: permissions: { contents: read, pull-requests: read, packages: read } (packages: npm ci installs
-# @releaseready/config from GitHub Packages, which needs a token even for a public package).
+# @buildproveship/config from GitHub Packages, which needs a token even for a public package).
 name: Reusable CI
 on:
   workflow_call:
@@ -84,7 +84,7 @@ jobs:
           node-version-file: ${{ inputs.node-version-file }}
           cache: npm
           registry-url: https://npm.pkg.github.com
-          scope: "@releaseready"
+          scope: "@buildproveship"
       - name: Restore build output
         if: ${{ inputs.cache-paths != '' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
