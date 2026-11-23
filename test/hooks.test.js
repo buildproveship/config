@@ -540,3 +540,17 @@ test("the package ships the hooks bin and its files", () => {
   assert.ok(pkg.files.includes("hooks/*.js"));
   assert.ok(pkg.files.includes("templates"));
 });
+
+test("the reusable CI workflow checks out full history so origin/main exists for the check-command", () => {
+  const ci =
+    /** @type {{ jobs: { checks: { steps: { uses?: string, with?: Record<string, unknown> }[] } } }} */ (
+      parse(
+        readFileSync(join(REPO, ".github/workflows/reusable-ci.yml"), "utf8"),
+      )
+    );
+  const checkout = ci.jobs.checks.steps.find((step) =>
+    step.uses?.startsWith("actions/checkout@"),
+  );
+  assert.equal(checkout?.with?.["fetch-depth"], 0);
+  assert.equal(checkout?.with?.["persist-credentials"], false);
+});

@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.0.1 (2026-11-23)
+
+- `reusable-ci.yml` checks out with `fetch-depth: 0`, so `origin/main` exists in the job. Before, a check-command that compared against the merge target (test-data-management's `openapi:check`, `git ls-tree origin/main`) failed with exit 128 on every non-docs PR. Callers pick this up by pinning the new commit.
+
 ## 5.0.0 (2026-11-23)
 
 Breaking: the package is now `@buildproveship/config` (BPS npm scope migration). The GitHub org was renamed to `buildproveship` and GitHub Packages scopes must match the org.
