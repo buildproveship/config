@@ -504,7 +504,7 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
-  test("old-brand: new ReleaseReady in current Markdown fails; history paths, history lines and tool names pass", async () => {
+  test("old-brand: new ReleaseReady in Markdown prose fails; history paths, history lines, tool names, code and URLs pass", async () => {
     const hits = await rulesHit({
       "README.md":
         "# ReleaseReady\n\nBuildProveShip (formerly ReleaseReady).\nRun `npx releaseready-guardrails`.\n",
@@ -512,6 +512,8 @@ describe("releaseready-guardrails rules", () => {
       "docs/history/old.md": "ReleaseReady\n",
       "docs/decisions/adr-001.md": "ReleaseReady\n",
       "CHANGELOG.md": "ReleaseReady\n",
+      "docs/code.md":
+        "Use `ReleaseReady` here, see https://x.test/ReleaseReady/a.\n\n```sh\ncd ReleaseReady\n```\n",
       "src/a.ts": "// ReleaseReady\nexport const a = 1;\n",
     });
     assert.deepEqual(hits, [

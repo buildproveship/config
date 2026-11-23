@@ -787,6 +787,8 @@ const brandHistoryLine = /formerly|renamed|rebrand|\(history\)|previously/i;
 /**
  * The 23 Nov 2026 rebrand: the product is BuildProveShip. New "ReleaseReady" in Markdown docs outside history fails.
  * Lowercase identifiers (`releaseready-guardrails`, the `releaseready()` ESLint helper) are tool names, not the brand.
+ * Inline code, fenced code blocks and URLs are not prose: they quote identifiers, paths and links that the code or
+ * org-reference changes rename.
  *
  * @type {Rule}
  */
@@ -799,11 +801,17 @@ function oldBrand(repo) {
       !matches(p, brandHistoryPaths) &&
       !matches(p, skillCopies),
   )) {
+    let fenced = false;
     repo
       .read(path)
       .split("\n")
       .forEach((text, index) => {
-        if (/Release[ -]?Ready/.test(text) && !brandHistoryLine.test(text)) {
+        if (/^\s*(?:```|~~~)/.test(text)) fenced = !fenced;
+        if (fenced) return; // code blocks quote identifiers, paths and fixtures that code changes rename
+        const prose = text
+          .replace(/`[^`]*`/g, "")
+          .replace(/https?:\/\/\S+/g, "");
+        if (/Release[ -]?Ready/.test(prose) && !brandHistoryLine.test(text)) {
           findings.push({
             rule: "old-brand",
             path,
