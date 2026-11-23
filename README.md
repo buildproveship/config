@@ -78,7 +78,7 @@ output stay in each repo because they differ by runtime.
 ## Renovate
 
 ```json
-{ "extends": ["github>releaseready/config"] }
+{ "extends": ["github>buildproveship/config"] }
 ```
 
 Weekly (Monday before 06:00 Hong Kong time), 3-day minimum release age, pinned versions and action digests, grouped
@@ -183,7 +183,7 @@ security:
       with:
         fetch-depth: 0
         persist-credentials: false
-    - uses: releaseready/config/.github/actions/security-scan@<full commit sha of the release tag>
+    - uses: buildproveship/config/.github/actions/security-scan@<full commit sha of the release tag>
 ```
 
 Existing findings go in a baseline in the consumer repo, never a switch-off:

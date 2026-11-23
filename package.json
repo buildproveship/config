@@ -6,7 +6,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/releaseready/config.git"
+    "url": "git+https://github.com/buildproveship/config.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",

@@ -62,7 +62,7 @@ describe("releaseready-guardrails rules", () => {
         {
           dependencies: {
             a: "github:releaseready/a#1e5a21f",
-            b: "git+ssh://git@github.com/releaseready/b.git",
+            b: "git+ssh://git@github.com/buildproveship/b.git",
             c: "file:../c",
             d: "./vendor/d-1.0.0.tgz",
             e: "releaseready/e",
@@ -109,7 +109,7 @@ describe("releaseready-guardrails rules", () => {
             },
             "node_modules/@releaseready/h": {
               resolved:
-                "https://github.com/releaseready/h/releases/download/v1.0.0/h-1.0.0.tgz",
+                "https://github.com/buildproveship/h/releases/download/v1.0.0/h-1.0.0.tgz",
             },
             "node_modules/@releaseready/ws": {
               resolved: "packages/ws",
@@ -120,7 +120,8 @@ describe("releaseready-guardrails rules", () => {
                 "https://npm.pkg.github.com/download/@releaseready/reg/1.0.0/abc",
             },
             "node_modules/@releaseready/git": {
-              resolved: "git+ssh://git@github.com/releaseready/git.git#abc1234",
+              resolved:
+                "git+ssh://git@github.com/buildproveship/git.git#abc1234",
             },
           },
         },

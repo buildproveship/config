@@ -14,4 +14,4 @@ permissions:
   packages: read
 jobs:
   ci:
-    uses: releaseready/config/.github/workflows/reusable-ci.yml@<sha>
+    uses: buildproveship/config/.github/workflows/reusable-ci.yml@<sha>

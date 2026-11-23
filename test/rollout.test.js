@@ -126,7 +126,7 @@ test("the Copilot setup steps call the released install-gitleaks action, which e
   const text = renderCopilotSetup(SHA);
   assert.match(
     text,
-    new RegExp(`releaseready/config/.github/actions/install-gitleaks@${SHA}`),
+    new RegExp(`buildproveship/config/.github/actions/install-gitleaks@${SHA}`),
   );
   assert.ok(existsSync(join(ROOT, ".github/actions/install-gitleaks")));
   assert.doesNotMatch(text, /uses: \.\//);

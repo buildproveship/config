@@ -9,4 +9,4 @@ permissions:
   packages: read
 jobs:
   e2e:
-    uses: releaseready/config/.github/workflows/reusable-nightly.yml@<sha>
+    uses: buildproveship/config/.github/workflows/reusable-nightly.yml@<sha>
