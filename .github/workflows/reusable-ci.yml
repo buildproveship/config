@@ -1,4 +1,4 @@
-# Lean CI for every releaseready repo, called from the repo's own pr.yml (see templates/workflows/pr.yml). The local
+# Lean CI for every BuildProveShip repo, called from the repo's own pr.yml (see templates/workflows/pr.yml). The local
 # hooks (Husky: pre-commit, commit-msg, pre-push) are the first gate; this is the second, so it only has to confirm.
 #
 # Cost rules (cap: $10/month of GitHub Actions):

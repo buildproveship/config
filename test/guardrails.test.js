@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, test } from "node:test";
@@ -24,8 +30,8 @@ async function repo(files, options = {}) {
   const root = mkdtempSync(join(tmpdir(), "guardrails-"));
   execFileSync("git", ["init", "-q"], { cwd: root });
   const all = {
-    "AGENTS.md": "Read skills/releaseready-code-quality/SKILL.md.\n",
-    "CLAUDE.md": "Read skills/releaseready-code-quality/SKILL.md.\n",
+    "AGENTS.md": "Read skills/buildproveship-code-quality/SKILL.md.\n",
+    "CLAUDE.md": "Read skills/buildproveship-code-quality/SKILL.md.\n",
     ...files,
   };
   for (const [path, content] of Object.entries(all)) {
@@ -498,6 +504,53 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
+  test("old-brand: new ReleaseReady in Markdown prose fails; history paths, history lines, tool names, code and URLs pass", async () => {
+    const hits = await rulesHit({
+      "README.md":
+        "# ReleaseReady\n\nBuildProveShip (formerly ReleaseReady).\nRun `npx releaseready-guardrails`.\n",
+      "docs/guide.md": "Release Ready docs\n",
+      "docs/history/old.md": "ReleaseReady\n",
+      "docs/decisions/adr-001.md": "ReleaseReady\n",
+      "CHANGELOG.md": "ReleaseReady\n",
+      "docs/code.md":
+        "Use `ReleaseReady` here, see https://x.test/ReleaseReady/a.\n\n```sh\ncd ReleaseReady\n```\n",
+      "src/a.ts": "// ReleaseReady\nexport const a = 1;\n",
+    });
+    assert.deepEqual(hits, [
+      "old-brand README.md:1",
+      "old-brand docs/guide.md:1",
+    ]);
+  });
+
+  test("skill rename: sync removes the old copy and writes an alias stub; a leftover old copy is skill-drift", async () => {
+    const root = await repo({
+      "skills/releaseready-code-quality/SKILL.md": "old copy\n",
+    });
+    assert.equal(
+      existsSync(join(root, "skills/releaseready-code-quality")),
+      false,
+    );
+    assert.match(
+      readFileSync(
+        join(root, ".claude/skills/releaseready-code-quality/SKILL.md"),
+        "utf8",
+      ),
+      /renamed `buildproveship-code-quality`/,
+    );
+    assert.deepEqual(
+      (await findAll(root)).filter((f) => f.rule === "skill-drift"),
+      [],
+    );
+    mkdirSync(join(root, "skills/releaseready-code-quality"));
+    writeFileSync(join(root, "skills/releaseready-code-quality/SKILL.md"), "x");
+    assert.deepEqual(
+      (await findAll(root))
+        .filter((f) => f.rule === "skill-drift")
+        .map((f) => f.path),
+      ["skills/releaseready-code-quality/SKILL.md"],
+    );
+  });
+
   test("tracked-ds-store: fails on a tracked .DS_Store at any depth, not on an untracked or ignored one", async () => {
     const root = await repo({
       ".gitignore": "ignored/.DS_Store\n",
@@ -629,16 +682,16 @@ describe("releaseready-guardrails rules", () => {
     assert.ok(missing.some((f) => f.path === "AGENTS.md"));
     assert.ok(
       missing.some(
-        (f) => f.path === "skills/releaseready-code-quality/SKILL.md",
+        (f) => f.path === "skills/buildproveship-code-quality/SKILL.md",
       ),
     );
     await syncSkill(root);
     writeFileSync(
-      join(root, "skills/releaseready-code-quality/SKILL.md"),
+      join(root, "skills/buildproveship-code-quality/SKILL.md"),
       "edited",
     );
     writeFileSync(
-      join(root, "skills/releaseready-code-quality/extra.md"),
+      join(root, "skills/buildproveship-code-quality/extra.md"),
       "extra",
     );
     const drift = (await findAll(root))
@@ -647,8 +700,8 @@ describe("releaseready-guardrails rules", () => {
       .sort();
     assert.deepEqual(drift, [
       "AGENTS.md",
-      "skills/releaseready-code-quality/SKILL.md",
-      "skills/releaseready-code-quality/extra.md",
+      "skills/buildproveship-code-quality/SKILL.md",
+      "skills/buildproveship-code-quality/extra.md",
     ]);
   });
 });

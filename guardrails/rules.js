@@ -1,5 +1,5 @@
 // Static rules of releaseready-guardrails. Each rule names the 18 Nov 2026 review findings it prevents; the skill
-// (skill/releaseready-code-quality/SKILL.md) explains the fix. Every rule is a pure function of the repo's files.
+// (skill/buildproveship-code-quality/SKILL.md) explains the fix. Every rule is a pure function of the repo's files.
 import { parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
 import { minimatch } from "minimatch";
 import { posix } from "node:path";
@@ -45,6 +45,8 @@ export const alwaysExcluded = [
 const skillCopies = [
   "skills/releaseready-code-quality/**",
   ".claude/skills/releaseready-code-quality/**",
+  "skills/buildproveship-code-quality/**",
+  ".claude/skills/buildproveship-code-quality/**",
 ];
 
 /**
@@ -764,6 +766,67 @@ function readmeHistory(repo) {
 }
 
 /**
+ * Paths that record history: the old product name is part of the record and stays (owner ruling, 23 Nov 2026).
+ * Changelogs, decision records, review findings, approval records and `docs/history/` are history, not current docs.
+ */
+const brandHistoryPaths = [
+  "**/CHANGELOG.md",
+  "**/LICENSE*",
+  "**/docs/history/**",
+  "**/docs/decisions/**",
+  "**/docs/findings/**",
+  "**/docs/design/approvals.*",
+  "**/docs/design/*-record.md",
+  "**/docs/design/*-drafts.md",
+  "**/_review/**",
+];
+
+/** A line that says it is history, or states the rename itself, may name the old product. */
+const brandHistoryLine = /formerly|renamed|rebrand|\(history\)|previously/i;
+
+/**
+ * The 23 Nov 2026 rebrand: the product is BuildProveShip. New "ReleaseReady" in Markdown docs outside history fails.
+ * Lowercase identifiers (`releaseready-guardrails`, the `releaseready()` ESLint helper) are tool names, not the brand.
+ * Inline code, fenced code blocks and URLs are not prose: they quote identifiers, paths and links that the code or
+ * org-reference changes rename.
+ *
+ * @type {Rule}
+ */
+function oldBrand(repo) {
+  /** @type {Finding[]} */
+  const findings = [];
+  for (const path of repo.paths.filter(
+    (p) =>
+      matches(p, ["**/*.md", "**/*.mdx"]) &&
+      !matches(p, brandHistoryPaths) &&
+      !matches(p, skillCopies),
+  )) {
+    let fenced = false;
+    repo
+      .read(path)
+      .split("\n")
+      .forEach((text, index) => {
+        if (/^\s*(?:```|~~~)/.test(text)) fenced = !fenced;
+        if (fenced) return; // code blocks quote identifiers, paths and fixtures that code changes rename
+        const prose = text
+          .replace(/`[^`]*`/g, "")
+          .replace(/https?:\/\/\S+/g, "");
+        if (/Release[ -]?Ready/.test(prose) && !brandHistoryLine.test(text)) {
+          findings.push({
+            rule: "old-brand",
+            path,
+            line: index + 1,
+            message:
+              'the product is now "BuildProveShip": rename it, or mark a history line "formerly ReleaseReady" (history files are exempt)',
+            text,
+          });
+        }
+      });
+  }
+  return findings;
+}
+
+/**
  * macOS rewrites a tracked .DS_Store and dirties every checkout. Checks the git index (`git ls-files`), not the
  * working tree: an ignored or untracked .DS_Store is harmless, a tracked one is the problem.
  *
@@ -885,6 +948,7 @@ export const rules = [
   skippedTests,
   eslintConfigOverrides,
   readmeHistory,
+  oldBrand,
   trackedDsStore,
   trackedBuildOutput,
   oversizedSourceFile,

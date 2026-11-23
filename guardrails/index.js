@@ -1,4 +1,4 @@
-// releaseready-guardrails: the mechanical half of the releaseready-code-quality skill (CLI in cli.js).
+// releaseready-guardrails: the mechanical half of the buildproveship-code-quality skill (CLI in cli.js).
 //
 // Repo settings live in releaseready-guardrails.json (see guardrails/config.schema.json). Every allowlist entry
 // carries a reason, and an entry that no longer matches anything is itself an error.

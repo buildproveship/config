@@ -1,11 +1,16 @@
-// The releaseready-code-quality skill ships in this package; every repo keeps a byte-identical copy at
-// skills/releaseready-code-quality/ plus a .claude/skills loader stub, and names it in AGENTS.md and CLAUDE.md.
+// The buildproveship-code-quality skill ships in this package; every repo keeps a byte-identical copy at
+// skills/buildproveship-code-quality/ plus a .claude/skills loader stub, and names it in AGENTS.md and CLAUDE.md.
 // `releaseready-guardrails sync` writes the copy; the `skill-drift` rule fails when it differs.
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const skillName = "releaseready-code-quality";
+const skillName = "buildproveship-code-quality";
+// The skill was named releaseready-code-quality until the 23 Nov 2026 rename to BuildProveShip. The old name keeps
+// loading through an alias stub; the old copy under skills/ is removed by sync and reported by skill-drift.
+const oldSkillName = "releaseready-code-quality";
+const oldSkillDir = `skills/${oldSkillName}`;
+const oldStubPath = `.claude/skills/${oldSkillName}/SKILL.md`;
 const skillDir = `skills/${skillName}`;
 const stubPath = `.claude/skills/${skillName}/SKILL.md`;
 const packageSkillDir = fileURLToPath(
@@ -41,6 +46,18 @@ change it in the config repo and run \`npx releaseready-guardrails sync\`.
 `;
 }
 
+/** @param {string} description the skill's frontmatter description */
+function oldStub(description) {
+  return `---
+name: ${oldSkillName}
+description: ${description}
+---
+
+This skill was renamed \`${skillName}\` (BuildProveShip rebrand, 23 Nov 2026). Read \`${skillDir}/SKILL.md\` (from the repo
+root) and its \`references/\` and follow them. This alias keeps the old name loading; remove it once nothing refers to it.
+`;
+}
+
 /** @param {Map<string, string>} skill */
 function descriptionOf(skill) {
   const text = skill.get(`${skillDir}/SKILL.md`) ?? "";
@@ -55,6 +72,7 @@ function descriptionOf(skill) {
 async function expectedFiles() {
   const skill = await publishedSkill();
   skill.set(stubPath, stub(descriptionOf(skill)));
+  skill.set(oldStubPath, oldStub(descriptionOf(skill)));
   return skill;
 }
 
@@ -92,6 +110,14 @@ export async function skillDrift(repo) {
       });
     }
   }
+  if (present.has(`${oldSkillDir}/SKILL.md`)) {
+    findings.push({
+      rule: "skill-drift",
+      path: `${oldSkillDir}/SKILL.md`,
+      line: 0,
+      message: `renamed to ${skillDir}: run \`npx releaseready-guardrails sync\` to remove the old copy`,
+    });
+  }
   for (const doc of ["AGENTS.md", "CLAUDE.md"]) {
     if (!present.has(doc) || !repo.read(doc).includes(`${skillDir}/SKILL.md`)) {
       findings.push({
@@ -114,6 +140,7 @@ export async function skillDrift(repo) {
 export async function syncSkill(root) {
   const expected = await expectedFiles();
   await rm(join(root, skillDir), { recursive: true, force: true });
+  await rm(join(root, oldSkillDir), { recursive: true, force: true });
   for (const [path, content] of expected) {
     await mkdir(dirname(join(root, path)), { recursive: true });
     await writeFile(join(root, path), content);

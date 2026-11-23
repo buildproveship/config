@@ -74,7 +74,7 @@ test("the rule-file templates resolve through the package export", () => {
       "utf8",
     );
     assert.ok(
-      text.includes("skills/releaseready-code-quality/SKILL.md"),
+      text.includes("skills/buildproveship-code-quality/SKILL.md"),
       `${name} must point to the skill (skill-drift)`,
     );
   }

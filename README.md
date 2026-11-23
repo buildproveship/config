@@ -1,7 +1,7 @@
 # @buildproveship/config
 
-One source for the code-quality settings every releaseready repo uses: an ESLint flat config, a Prettier config, a strict
-tsconfig base, a Renovate preset, the `releaseready-guardrails` checker and the `releaseready-code-quality` skill.
+One source for the code-quality settings every BuildProveShip repo uses: an ESLint flat config, a Prettier config, a strict
+tsconfig base, a Renovate preset, the `releaseready-guardrails` checker and the `buildproveship-code-quality` skill.
 Published to GitHub Packages as `@buildproveship/config`.
 
 ## Install
@@ -83,7 +83,7 @@ output stay in each repo because they differ by runtime.
 
 Weekly (Monday before 06:00 Hong Kong time), 3-day minimum release age, pinned versions and action digests, grouped
 non-major dev updates, one group for lint/format/typecheck tooling, security updates at any time. Renovate needs the
-[Renovate GitHub App](https://github.com/apps/renovate) installed on the `releaseready` organisation.
+[Renovate GitHub App](https://github.com/apps/renovate) installed on the `buildproveship` organisation.
 
 ## Local quality gates and CI
 
@@ -144,19 +144,19 @@ everything hosted.
 ## Guardrails and the code-quality skill
 
 `releaseready-guardrails` is the mechanical half of the
-[`releaseready-code-quality` skill](skill/releaseready-code-quality/SKILL.md), which encodes the 191 findings of the
+[`buildproveship-code-quality` skill](skill/buildproveship-code-quality/SKILL.md), which encodes the 191 findings of the
 18 Nov 2026 cross-repo review. Run it from the repo root:
 
 ```sh
 npx releaseready-guardrails            # static rules + knip + jscpd; what pr.yml runs (wrap it in npm run check:guardrails)
 npx releaseready-guardrails --static   # static rules only
-npx releaseready-guardrails sync       # copy the skill to skills/releaseready-code-quality/ and .claude/skills/
+npx releaseready-guardrails sync       # copy the skill to skills/buildproveship-code-quality/ and .claude/skills/
 npx releaseready-guardrails baseline   # allow entries for today's findings, reasons left empty
 ```
 
 The rules, the allowlist format (`releaseready-guardrails.json`, validated by
 [`guardrails/config.schema.json`](guardrails/config.schema.json)) and the AGENTS.md block are in
-[the checks reference](skill/releaseready-code-quality/references/checks.md). The skill's repo copy must equal the
+[the checks reference](skill/buildproveship-code-quality/references/checks.md). The skill's repo copy must equal the
 published one (`skill-drift`), so it changes only here.
 
 ## Shared test setup

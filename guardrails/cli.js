@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// releaseready-guardrails: the mechanical half of the releaseready-code-quality skill.
+// releaseready-guardrails: the mechanical half of the buildproveship-code-quality skill.
 //
 //   releaseready-guardrails            run every check from the repo root (what pr.yml runs)
 //   releaseready-guardrails --static   only the fast file rules (no knip, no jscpd)
