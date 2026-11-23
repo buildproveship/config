@@ -2,7 +2,7 @@
   "release": "v4.2.0",
   "repos": [
     {
-      "name": "ReleaseReady",
+      "name": "buildproveship",
       "private": true,
       "checkCommand": "npm run format:check && npm run typecheck && npm run build && npm run contracts:setup && npm run contracts:check && npm run contracts:package:check && npm run source:check && npm run contracts:lint && NODE_OPTIONS=--max-old-space-size=8192 npm run lint && npm run check:guardrails && export RR_SEALED_STORAGE_ROOT=\"$(cd \"$(mktemp -d)\" && pwd -P)\" && mkdir -m 700 \"$RR_SEALED_STORAGE_ROOT/tmp\" && TMPDIR=\"$RR_SEALED_STORAGE_ROOT/tmp/\" npm test"
     },
@@ -12,7 +12,7 @@
       "checkCommand": "npm run build:design-system && npm run typecheck && npm run lint && npm run format:check && npm run test:checks && npm run build:library:page && npm run check:guardrails && npm run check:licences && npm run check:code-quality && npm run build:design:vite && npx playwright install chromium && npx playwright test --project=pr-axe"
     },
     {
-      "name": "releaseready-product-tests",
+      "name": "buildproveship-product-tests",
       "private": true
     },
     {
