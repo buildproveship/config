@@ -1,4 +1,4 @@
-// Shared ESLint flat config for releaseready repos.
+// Shared ESLint flat config for BuildProveShip repos.
 //
 //   // eslint.config.js
 //   import { defineConfig } from "eslint/config";
@@ -15,7 +15,7 @@
 // es-tooling port of eslint-plugin-jsx-a11y, whose 6.x line declares ESLint 9 at most);
 // eslint-config-prettier last so formatting is Prettier's job alone.
 //
-// Suppressions (standard 2 of the releaseready-code-quality skill): every eslint-disable names its rules and carries
+// Suppressions (standard 2 of the buildproveship-code-quality skill): every eslint-disable names its rules and carries
 // `-- reason` (@eslint-community/eslint-comments), `@ts-ignore`/`@ts-nocheck` are banned and `@ts-expect-error` needs a
 // description (@typescript-eslint/ban-ts-comment, on JS files too), and focused `.only` tests fail (no-only-tests).
 import eslintComments from "@eslint-community/eslint-plugin-eslint-comments/configs";

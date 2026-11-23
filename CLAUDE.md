@@ -1,11 +1,11 @@
 # CLAUDE.md — @buildproveship/config
 
 This repo is the one source of the shared ESLint, Prettier, tsconfig and Renovate settings, the
-`releaseready-guardrails` checker and the `releaseready-code-quality` skill. Every releaseready repo consumes it.
+`releaseready-guardrails` checker and the `buildproveship-code-quality` skill. Every releaseready repo consumes it.
 
 ## Code quality (all changes)
 
-Follow `skills/releaseready-code-quality/SKILL.md` before writing code and before saying a change is done: no legacy
+Follow `skills/buildproveship-code-quality/SKILL.md` before writing code and before saying a change is done: no legacy
 or compatibility code without a named consumer; search npm, the SDK, the framework or the CLI before writing a
 helper; import shared code from `@buildproveship/test-management`, TDM `dev-fixtures`, `@buildproveship/config`,
 `@buildproveship/ui-web` or `@buildproveship/tokens`, never copy it; depend on published `^` versions only; never weaken
@@ -15,7 +15,7 @@ The check command is `npm run check`; it runs `npm run check:guardrails`, which 
 ## Working here
 
 - Git hooks (`.husky/`, from `hooks/`) run on every commit and push. Never use `--no-verify`, never edit a hook to get past it, never push to `main`.
-- The skill's source is `skill/releaseready-code-quality/`. Edit it there, then run `node guardrails/cli.js sync` so
+- The skill's source is `skill/buildproveship-code-quality/`. Edit it there, then run `node guardrails/cli.js sync` so
   this repo's own copy under `skills/` matches; consumers get it with `npx releaseready-guardrails sync` after
   upgrading.
 - A new error-level rule (ESLint or guardrails) is a major release; a fix or a narrower rule is a minor or patch.

@@ -1,4 +1,4 @@
-# Shared security scanners for every releaseready repo's pr.yml: gitleaks, trivy fs, semgrep and zizmor.
+# Shared security scanners for every BuildProveShip repo's pr.yml: gitleaks, trivy fs, semgrep and zizmor.
 # The caller checks out with fetch-depth: 0 first. Baselines live in the consumer repo (see README):
 #   .gitleaks-baseline.json   gitleaks findings accepted today (each is reviewed, never a live secret)
 #   .gitleaks.toml            optional gitleaks rules/allowlist

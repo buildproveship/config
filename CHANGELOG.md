@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.1.0 (2026-11-23)
+
+BuildProveShip rebrand of docs, metadata and the shared skill (BPS-92).
+
+- The skill is now `buildproveship-code-quality` (source `skill/buildproveship-code-quality/`, repo copy `skills/buildproveship-code-quality/`). The old name `releaseready-code-quality` keeps loading: `releaseready-guardrails sync` writes an alias stub at `.claude/skills/releaseready-code-quality/SKILL.md`, deletes the old `skills/releaseready-code-quality/` copy, and `skill-drift` reports an old copy left behind. Consumers: bump to `^5.1.0`, run `npx releaseready-guardrails sync`, and point AGENTS.md and CLAUDE.md at `skills/buildproveship-code-quality/SKILL.md`.
+- New rule `old-brand`: new "ReleaseReady" in Markdown outside history fails. History paths (`CHANGELOG.md`, `LICENSE*`, `docs/history/`, `docs/decisions/`, `docs/findings/`, `docs/design/approvals.*`, `docs/design/*-record.md`, `_review/`) and lines saying "formerly", "renamed", "rebrand", "(history)" or "previously" are exempt. Lowercase tool names (`releaseready-guardrails`, `releaseready-hooks`, the `releaseready()` ESLint helper) are kept and are not the brand. Allowlist with a reason like any other rule.
+- Docs, templates, workflow comments and package description name BuildProveShip. The `releaseready-guardrails` and `releaseready-hooks` bins and `releaseready-guardrails.json` keep their names (renaming them breaks every consumer's scripts and allowlist).
+
 ## 5.0.1 (2026-11-23)
 
 - `reusable-ci.yml` checks out with `fetch-depth: 0`, so `origin/main` exists in the job. Before, a check-command that compared against the merge target (test-data-management's `openapi:check`, `git ls-tree origin/main`) failed with exit 128 on every non-docs PR. Callers pick this up by pinning the new commit.
