@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.0.0 (2026-11-23)
+
+Breaking: the package is now `@buildproveship/config` (BPS npm scope migration). The GitHub org was renamed to `buildproveship` and GitHub Packages scopes must match the org.
+
+- Consumers change every `@releaseready/config` import, `package.json` dependency and `.npmrc` line to `@buildproveship/...` (`@buildproveship:registry=https://npm.pkg.github.com`), and install `^5.0.0`.
+- Renovate preset, rollout script, templates, workflows' `scope:` and the guardrails' internal-package check use the new scope. The `releaseready-guardrails` bin and `releaseready-code-quality` skill names are unchanged.
+- New test `test/scope.test.js` fails on any tracked `@releaseready` reference outside `CHANGELOG.md` and `docs/history/`.
+- `@releaseready/config` stays on the registry for history; it is deprecated once all consumers have moved.
+
 ## 4.2.1 (2026-11-23)
 
 Skill text only, no change to exports (RRDSCRUM-484):

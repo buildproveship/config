@@ -1,15 +1,15 @@
-# @releaseready/config
+# @buildproveship/config
 
 One source for the code-quality settings every releaseready repo uses: an ESLint flat config, a Prettier config, a strict
 tsconfig base, a Renovate preset, the `releaseready-guardrails` checker and the `releaseready-code-quality` skill.
-Published to GitHub Packages as `@releaseready/config`.
+Published to GitHub Packages as `@buildproveship/config`.
 
 ## Install
 
 Add the scope to the repo's `.npmrc`:
 
 ```ini
-@releaseready:registry=https://npm.pkg.github.com
+@buildproveship:registry=https://npm.pkg.github.com
 ```
 
 Then install it with its peers. Locally you need a token with `read:packages` (for example `gh auth refresh -s read:packages`
@@ -18,7 +18,7 @@ and `export NODE_AUTH_TOKEN=$(gh auth token)`); in GitHub Actions `actions/setup
 public.
 
 ```sh
-npm install --save-dev @releaseready/config eslint prettier typescript
+npm install --save-dev @buildproveship/config eslint prettier typescript
 ```
 
 ## ESLint
@@ -26,7 +26,7 @@ npm install --save-dev @releaseready/config eslint prettier typescript
 ```js
 // eslint.config.js
 import { defineConfig } from "eslint/config";
-import { releaseready } from "@releaseready/config/eslint";
+import { releaseready } from "@buildproveship/config/eslint";
 
 export default defineConfig(
   releaseready({ tsconfigRootDir: import.meta.dirname }), // add `react: true` in React repos
@@ -56,7 +56,7 @@ Every TS file must be in a tsconfig the project service can find. Config files o
 ## Prettier
 
 ```json
-{ "prettier": "@releaseready/config/prettier" }
+{ "prettier": "@buildproveship/config/prettier" }
 ```
 
 Prettier's defaults (double quotes, trailing commas, 80 columns), spelled out so a Prettier major cannot change them.
@@ -65,7 +65,7 @@ Prettier's defaults (double quotes, trailing commas, 80 columns), spelled out so
 
 ```json
 {
-  "extends": "@releaseready/config/tsconfig.json",
+  "extends": "@buildproveship/config/tsconfig.json",
   "compilerOptions": { "module": "NodeNext", "outDir": "dist" },
   "include": ["src", "tests"]
 }
@@ -91,7 +91,7 @@ Nothing should reach GitHub unless it passes on the developer's machine, so CI o
 three [Husky](https://typicode.github.io/husky/) hooks, each a script in [`hooks/`](hooks):
 
 ```sh
-npm install --save-dev @releaseready/config
+npm install --save-dev @buildproveship/config
 npm pkg set scripts.prepare="releaseready-hooks install"
 npm install # runs prepare; commit the generated .husky/ files
 ```
@@ -124,7 +124,7 @@ or edit a hook, and never push to `main`; a failing hook is fixed at its cause. 
 
 ### CI workflows
 
-`npm ci` installs `@releaseready/config` from GitHub Packages, so the callers grant `packages: read` and the workflows pass
+`npm ci` installs `@buildproveship/config` from GitHub Packages, so the callers grant `packages: read` and the workflows pass
 `github.token` as `NODE_AUTH_TOKEN`. Call these from the repo's own workflows with the templates in [`templates/workflows/`](templates/workflows), pinned to
 the full commit sha of a release tag:
 
@@ -163,9 +163,9 @@ published one (`skill-drift`), so it changes only here.
 
 For the WebdriverIO and Playwright frameworks (appium2, UPF); synthetic values only, no secrets.
 
-- `@releaseready/config/dotenv`: `loadEnv({ path?, processEnv? })` reads a `.env` file into `process.env` (dotenv; values already set win; a missing file is fine) and returns what the file held.
-- `@releaseready/config/allure`: `allureReporter(options?)` returns the `["allure", { outputDir: "allure-results", ...options }]` reporter tuple: `reporters: ["spec", allureReporter()]`. The repo installs `@wdio/allure-reporter` itself.
-- `@releaseready/config/templates/AGENTS.md`, `CLAUDE.md` and `copilot-instructions.md`: the shared agent rule files (test classification, design before implementation). Copy them into the repo once, then add repo-specific rules above the shared sections; fill in the check command in the AGENTS.md and CLAUDE.md code-quality block.
+- `@buildproveship/config/dotenv`: `loadEnv({ path?, processEnv? })` reads a `.env` file into `process.env` (dotenv; values already set win; a missing file is fine) and returns what the file held.
+- `@buildproveship/config/allure`: `allureReporter(options?)` returns the `["allure", { outputDir: "allure-results", ...options }]` reporter tuple: `reporters: ["spec", allureReporter()]`. The repo installs `@wdio/allure-reporter` itself.
+- `@buildproveship/config/templates/AGENTS.md`, `CLAUDE.md` and `copilot-instructions.md`: the shared agent rule files (test classification, design before implementation). Copy them into the repo once, then add repo-specific rules above the shared sections; fill in the check command in the AGENTS.md and CLAUDE.md code-quality block.
 
 ## Security scanners
 

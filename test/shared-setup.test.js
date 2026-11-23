@@ -4,8 +4,8 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { allureReporter } from "@releaseready/config/allure";
-import { loadEnv } from "@releaseready/config/dotenv";
+import { allureReporter } from "@buildproveship/config/allure";
+import { loadEnv } from "@buildproveship/config/dotenv";
 
 const require = createRequire(import.meta.url);
 
@@ -57,20 +57,20 @@ test("allureReporter returns the wdio reporter tuple with one output directory",
 test("the rule-file templates resolve through the package export", () => {
   for (const name of ["AGENTS.md", "CLAUDE.md", "copilot-instructions.md"]) {
     const text = readFileSync(
-      require.resolve(`@releaseready/config/templates/${name}`),
+      require.resolve(`@buildproveship/config/templates/${name}`),
       "utf8",
     );
     assert.ok(text.length > 0, name);
   }
   const rules = readFileSync(
-    require.resolve("@releaseready/config/templates/copilot-instructions.md"),
+    require.resolve("@buildproveship/config/templates/copilot-instructions.md"),
     "utf8",
   );
   assert.match(rules, /## Tests and classification/);
   assert.match(rules, /## Design before implementation/);
   for (const name of ["AGENTS.md", "CLAUDE.md"]) {
     const text = readFileSync(
-      require.resolve(`@releaseready/config/templates/${name}`),
+      require.resolve(`@buildproveship/config/templates/${name}`),
       "utf8",
     );
     assert.ok(

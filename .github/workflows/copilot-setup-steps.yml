@@ -19,7 +19,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           registry-url: https://npm.pkg.github.com
-          scope: "@releaseready"
+          scope: "@buildproveship"
       - uses: ./.github/actions/install-gitleaks # test/hooks.test.js needs it
       - run: npm ci
         env:

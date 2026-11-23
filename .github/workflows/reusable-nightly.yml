@@ -34,7 +34,7 @@ jobs:
           node-version-file: ${{ inputs.node-version-file }}
           cache: npm
           registry-url: https://npm.pkg.github.com
-          scope: "@releaseready"
+          scope: "@buildproveship"
       - name: Install dependencies
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}

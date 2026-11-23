@@ -40,7 +40,7 @@ function repoDir(files) {
 
 const PACKAGE = JSON.stringify({
   scripts: { check: "true" },
-  devDependencies: { zod: "^4.0.0", "@releaseready/config": "^4.0.0" },
+  devDependencies: { zod: "^4.0.0", "@buildproveship/config": "^4.0.0" },
 });
 const HOSTED_WORKFLOW = "jobs:\n  a:\n    runs-on: ubuntu-24.04\n";
 
@@ -86,7 +86,7 @@ test("the plan sets the config devDependency and the prepare script, and adds th
   const pkg = JSON.parse(
     changes.find((change) => change.path === "package.json")?.after ?? "",
   );
-  assert.equal(pkg.devDependencies["@releaseready/config"], "^4.2.0");
+  assert.equal(pkg.devDependencies["@buildproveship/config"], "^4.2.0");
   assert.equal(pkg.devDependencies.zod, "^4.0.0");
   assert.equal(pkg.scripts.prepare, "releaseready-hooks install");
   for (const hook of HOOKS)

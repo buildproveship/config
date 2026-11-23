@@ -70,7 +70,7 @@ runs:
         python3 -m venv "$RUNNER_TEMP/semgrep"
         "$RUNNER_TEMP/semgrep/bin/pip" install --quiet "semgrep==${SEMGREP_VERSION}"
         # One rule is excluded, for this reason: npm-missing-minimum-release-age wants `min-release-age = 7` in .npmrc,
-        # which needs npm >= 11.10 (we pin 11.4.2) and would block our own @releaseready packages for 7 days after
+        # which needs npm >= 11.10 (we pin 11.4.2) and would block our own @buildproveship packages for 7 days after
         # each release. Versions are pinned by the lockfile and Renovate. Revisit when npm is upgraded.
         "$RUNNER_TEMP/semgrep/bin/semgrep" scan --config p/default --error --metrics=off --quiet --exclude node_modules \
           --exclude-rule package_managers.npm.npm-missing-minimum-release-age.npm-missing-minimum-release-age

@@ -23,7 +23,7 @@ test("every export target exists and the tsconfig base is strict", async () => {
   );
   for (const subpath of Object.keys(pkg.exports)) {
     assert.ok(
-      require.resolve(`@releaseready/config${subpath.slice(1)}`),
+      require.resolve(`@buildproveship/config${subpath.slice(1)}`),
       subpath,
     );
   }

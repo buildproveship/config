@@ -36,7 +36,7 @@ description: ${description}
 ---
 
 This is a loader stub. The skill lives at \`${skillDir}/SKILL.md\` (from the repo root), copied from
-\`@releaseready/config\`. Read that file and its \`references/\` and follow them. Never edit the copy here or there:
+\`@buildproveship/config\`. Read that file and its \`references/\` and follow them. Never edit the copy here or there:
 change it in the config repo and run \`npx releaseready-guardrails sync\`.
 `;
 }
@@ -76,7 +76,7 @@ export async function skillDrift(repo) {
         path,
         line: 0,
         message: present.has(path)
-          ? "differs from the skill published in @releaseready/config: run `npx releaseready-guardrails sync`"
+          ? "differs from the skill published in @buildproveship/config: run `npx releaseready-guardrails sync`"
           : "missing: run `npx releaseready-guardrails sync`",
       });
     }
