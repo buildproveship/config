@@ -1,15 +1,17 @@
+// Classification: integration; synthetic temporary fixtures; Not Reviewed.
 import assert from "node:assert/strict";
 import {
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import { parse } from "yaml";
 import { HOOKS } from "../hooks/install.js";
 import {
@@ -21,6 +23,9 @@ import {
   renderPr,
 } from "../scripts/rollout.js";
 
+const fixtureRoot = mkdtempSync(join(tmpdir(), "config-rollout-"));
+after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
+
 const SHA = "a".repeat(40);
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const { repos } = loadRepos();
@@ -30,7 +35,7 @@ const { repos } = loadRepos();
  * @param {Record<string, string>} files
  */
 function repoDir(files) {
-  const dir = mkdtempSync(join(tmpdir(), "rollout-test-"));
+  const dir = mkdtempSync(join(fixtureRoot, "rollout-test-"));
   for (const [path, content] of Object.entries(files)) {
     mkdirSync(join(dir, path, ".."), { recursive: true });
     writeFileSync(join(dir, path), content);

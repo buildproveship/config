@@ -1,9 +1,13 @@
+// Classification: integration; synthetic temporary fixtures; Not Reviewed.
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { test } from "node:test";
+import { after, test } from "node:test";
+
+const fixtureRoot = mkdtempSync(join(tmpdir(), "config-security-scan-"));
+after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
 
 const script = new URL(
   "../.github/actions/security-scan/satisfies-identifier.py",
@@ -12,7 +16,7 @@ const script = new URL(
 
 /** @param {string} source */
 function scan(source) {
-  const dir = mkdtempSync(join(tmpdir(), "satisfies-"));
+  const dir = mkdtempSync(join(fixtureRoot, "satisfies-"));
   // Run from a git hook (pre-push), GIT_DIR is set and `git init` would rewrite the real repo's config.
   const env = Object.fromEntries(
     Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_")),
