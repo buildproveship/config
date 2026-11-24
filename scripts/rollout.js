@@ -21,13 +21,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { gt, valid } from "semver";
 import { HOOKS } from "../hooks/install.js";
 
 const CONFIG_ROOT = fileURLToPath(new URL("../", import.meta.url));
 const BRANCH = "RRDPLAT-105-shared-hooks-and-ci";
+const DELIVERY_BRANCH = "RRDPLAT-103-delivery-rules";
 const HOSTED = /^(\s*runs-on:\s*)ubuntu-[\w.-]+\s*$/gm;
 const SELF_HOSTED = "[self-hosted, rr-local]";
 const AGENTS_MARKER = "## Local hooks and CI";
+const INSTALL_HOOKS = ["--no-install", "releaseready-hooks", "install"];
 
 /**
  * @typedef {{ name: string, private: boolean, checkCommand?: string, scripts?: Record<string, string>, skip?: string }} Repo
@@ -109,7 +112,7 @@ function agentsNote(repo, ignoreScripts) {
  * @param {string} dir the repo's working tree
  * @param {Repo} repo
  * @param {string} sha
- * @returns {{ changes: Change[], warnings: string[] }}
+ * @returns {{ changes: Change[], warnings: string[], actions: string[] }}
  */
 export function planRepo(dir, repo, sha) {
   /** @type {Change[]} */
@@ -131,10 +134,25 @@ export function planRepo(dir, repo, sha) {
   const packageText = read("package.json");
   if (packageText === null) {
     warnings.push("no package.json");
-    return { changes, warnings };
+    return { changes, warnings, actions: [] };
   }
   const pkg = JSON.parse(packageText);
   const release = loadRepos().release.slice(1);
+  if (!valid(release))
+    throw new Error("rollout release must be a valid v-prefixed version");
+  const current = pkg.devDependencies?.["@buildproveship/config"];
+  if (current !== undefined) {
+    const minimum =
+      typeof current === "string" && current.startsWith("^")
+        ? valid(current.slice(1))
+        : null;
+    if (!minimum || gt(minimum, release)) {
+      warnings.push(
+        `refusing to replace @buildproveship/config ${String(current)} with ^${release}; choose a compatible rollout release`,
+      );
+      return { changes, warnings, actions: [] };
+    }
+  }
   pkg.devDependencies = {
     ...pkg.devDependencies,
     "@buildproveship/config": `^${release}`,
@@ -162,18 +180,20 @@ export function planRepo(dir, repo, sha) {
     );
   put("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
 
-  for (const hook of HOOKS)
-    put(`.husky/${hook}`, `(written by releaseready-hooks install)\n`);
-
   put(".github/workflows/pr.yml", renderPr(repo, sha));
   put(".github/workflows/copilot-setup-steps.yml", renderCopilotSetup(sha));
-  if (repo.private) {
-    for (const file of readdirSync(join(dir, ".github/workflows")))
+  if (repo.private && existsSync(join(dir, ".github/workflows"))) {
+    for (const entry of readdirSync(join(dir, ".github/workflows"), {
+      withFileTypes: true,
+    })) {
+      if (!entry.isFile()) continue;
+      const file = entry.name;
       if (file !== "pr.yml" && file !== "copilot-setup-steps.yml") {
         const path = `.github/workflows/${file}`;
         const before = read(path) ?? "";
         put(path, before.replace(HOSTED, `$1${SELF_HOSTED}`));
       }
+    }
   }
 
   const agents = read("AGENTS.md") ?? "# Agent instructions\n";
@@ -186,7 +206,8 @@ export function planRepo(dir, repo, sha) {
       `${agents.trimEnd()}\n\n${agentsNote(repo, ignoreScripts)}`,
     );
   }
-  return { changes, warnings };
+  // Installed package paths depend on npm's layout. Report the generator action honestly instead of fake file diffs.
+  return { changes, warnings, actions: [`npx ${INSTALL_HOOKS.join(" ")}`] };
 }
 
 /**
@@ -239,6 +260,51 @@ function clone(name, into) {
 }
 
 /**
+ * Reuse an existing open rollout PR. Closed PRs and orphan branches require inspection; never overwrite them.
+ * Uses gh's supported PR query and Git's remote-ref query before cloning or changing a consumer.
+ * @param {Repo} repo
+ * @param {string} branch
+ * @returns {string | null}
+ */
+function existingRollout(repo, branch) {
+  /** @type {{ state: string, url: string }[]} */
+  const prs = JSON.parse(
+    run("gh", [
+      "pr",
+      "list",
+      "--repo",
+      `buildproveship/${repo.name}`,
+      "--head",
+      branch,
+      "--state",
+      "all",
+      "--json",
+      "state,url",
+    ]),
+  );
+  if (prs.length > 0) {
+    const open = prs.find((pr) => pr.state === "OPEN");
+    if (open) return open.url;
+    throw new Error(
+      `${repo.name}: rollout PR already closed; inspect it before choosing a new rollout branch`,
+    );
+  }
+  const remote = run("git", [
+    "-c",
+    "credential.helper=!gh auth git-credential",
+    "ls-remote",
+    "--heads",
+    `https://github.com/buildproveship/${repo.name}.git`,
+    `refs/heads/${branch}`,
+  ]);
+  if (remote)
+    throw new Error(
+      `${repo.name}: rollout branch exists without a PR; inspect and recover it before applying`,
+    );
+  return null;
+}
+
+/**
  * The full commit sha of the release tag, from the tag ref (dereferencing an annotated tag).
  * @param {string} tag
  */
@@ -268,6 +334,8 @@ ${runner}
 
 Changed files:
 ${files}
+
+Generated hooks (${HOOKS.join(", ")}): run \`npx ${INSTALL_HOOKS.join(" ")}\`. The dry-run lists this action, not placeholder hook-file contents; inspect the generated diff after installation.
 
 Not changed: scheduled and manual workflows other than \`pr.yml\` keep their own steps. The old pull-request security job is dropped: the pre-commit hook runs gitleaks and the reusable workflow runs the one \`ci\` check.
 
@@ -308,7 +376,7 @@ function apply(dir, repo, changes, work) {
     env,
   });
   // The repo's own .npmrc may set ignore-scripts=true, so install the hooks explicitly instead of through `prepare`.
-  run("npx", ["--no-install", "releaseready-hooks", "install"], {
+  run("npx", INSTALL_HOOKS, {
     cwd: dir,
     env,
   });
@@ -347,7 +415,7 @@ function apply(dir, repo, changes, work) {
  * @param {Change[]} changes
  */
 function applyDeliveryRules(dir, repo, changes) {
-  const branch = "RRDPLAT-103-delivery-rules";
+  const branch = DELIVERY_BRANCH;
   const git = (/** @type {string[]} */ ...args) =>
     run("git", args, { cwd: dir });
   git("checkout", "-b", branch);
@@ -388,12 +456,24 @@ function main() {
       task: { type: "string", default: "hooks" },
     },
   });
+  if (!["hooks", "delivery-rules"].includes(values.task))
+    throw new Error(`unknown task: ${values.task}`);
+  const knownRepos = loadRepos().repos.map((repo) => repo.name);
+  for (const name of values.repo ?? [])
+    if (!knownRepos.includes(name)) throw new Error(`unknown repo: ${name}`);
   if (values.task === "delivery-rules") {
     if (values["dry-run"] === values.apply)
       throw new Error("pass exactly one of --dry-run and --apply");
     const work = mkdtempSync(join(tmpdir(), "rollout-"));
     for (const repo of loadRepos().repos) {
       if (values.repo && !values.repo.includes(repo.name)) continue;
+      const existing = values.apply
+        ? existingRollout(repo, DELIVERY_BRANCH)
+        : null;
+      if (existing) {
+        console.log(`${repo.name}: existing PR (not updated): ${existing}`);
+        continue;
+      }
       const dir = clone(repo.name, work);
       const changes = planDeliveryRules(dir);
       console.log(
@@ -419,11 +499,17 @@ function main() {
         console.log(`skipped: ${repo.skip}`);
         continue;
       }
+      const existing = values.apply ? existingRollout(repo, BRANCH) : null;
+      if (existing) {
+        console.log(`${repo.name}: existing PR (not updated): ${existing}`);
+        continue;
+      }
       const dir = clone(repo.name, work);
-      const { changes, warnings } = planRepo(dir, repo, sha);
+      const { changes, warnings, actions } = planRepo(dir, repo, sha);
       for (const { path, before } of changes)
         console.log(`${before === null ? "A" : "M"} ${path}`);
       for (const warning of warnings) console.log(`warning: ${warning}`);
+      for (const action of actions) console.log(`RUN ${action}`);
       if (values.apply) {
         if (warnings.length > 0)
           throw new Error(`${repo.name}: resolve the warnings before --apply`);

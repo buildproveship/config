@@ -13,7 +13,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, test } from "node:test";
 import { parse } from "yaml";
-import { HOOKS } from "../hooks/install.js";
 import {
   loadRepos,
   planDeliveryRules,
@@ -85,8 +84,8 @@ test("every GitHub repo of the org is listed once, and only config and observabi
   );
 });
 
-test("the plan sets the config devDependency and the prepare script, and adds the hooks", () => {
-  const { changes, warnings } = consumer(true);
+test("the plan sets the dependency and prepare script, and reports hook generation separately", () => {
+  const { changes, warnings, actions } = consumer(true);
   assert.deepEqual(warnings, []);
   const pkg = JSON.parse(
     changes.find((change) => change.path === "package.json")?.after ?? "",
@@ -94,8 +93,8 @@ test("the plan sets the config devDependency and the prepare script, and adds th
   assert.equal(pkg.devDependencies["@buildproveship/config"], "^4.2.0");
   assert.equal(pkg.devDependencies.zod, "^4.0.0");
   assert.equal(pkg.scripts.prepare, "releaseready-hooks install");
-  for (const hook of HOOKS)
-    assert.ok(changes.some((change) => change.path === `.husky/${hook}`));
+  assert.deepEqual(actions, ["npx --no-install releaseready-hooks install"]);
+  assert.ok(!changes.some((change) => change.path.startsWith(".husky/")));
 });
 
 test("a private repo's hosted runners move to rr-local; a public repo's stay", () => {
