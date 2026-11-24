@@ -12,12 +12,6 @@
       "reason": "The tests feed deliberate legacy markers to the rules to prove they fail"
     },
     {
-      "rule": "skipped-test",
-      "path": "test/guardrails.test.js",
-      "max": 1,
-      "reason": "The tests feed a deliberate skipped test to the skipped-test rule"
-    },
-    {
       "rule": "copied-schema-primitive",
       "path": "test/guardrails.test.js",
       "max": 1,

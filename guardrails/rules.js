@@ -7,6 +7,7 @@ import {
 } from "jsonc-parser";
 import { minimatch } from "minimatch";
 import { posix } from "node:path";
+import { commentsOf, severityLocations, skippedTestLines } from "./syntax.js";
 
 /**
  * @typedef {object} Finding
@@ -585,42 +586,6 @@ function scannerPatterns(repo) {
 }
 
 /**
- * Comments in JS/TS source, skipping string and template literals so a `//` inside a string (a URL) does not hide a
- * real comment later on the line. Regex literals are not modelled.
- *
- * @param {string} source
- * @returns {{ index: number, raw: string }[]}
- */
-function commentsOf(source) {
-  /** @type {{ index: number, raw: string }[]} */
-  const out = [];
-  let i = 0;
-  while (i < source.length) {
-    const c = source[i];
-    if (c === '"' || c === "'" || c === "`") {
-      i++;
-      while (i < source.length && source[i] !== c) {
-        if (source[i] === "\\") i++;
-        else if (c !== "`" && source[i] === "\n") break;
-        i++;
-      }
-      i++;
-    } else if (source.startsWith("//", i)) {
-      const end = source.indexOf("\n", i);
-      const stop = end === -1 ? source.length : end;
-      out.push({ index: i, raw: source.slice(i, stop) });
-      i = stop;
-    } else if (source.startsWith("/*", i)) {
-      const end = source.indexOf("*/", i + 2);
-      const stop = end === -1 ? source.length : end + 2;
-      out.push({ index: i, raw: source.slice(i, stop) });
-      i = stop;
-    } else i++;
-  }
-  return out;
-}
-
-/**
  * Nov 2026 audit: a suppression or a hand-indexed `process.argv` keeps coming back.
  * A suppression is fine with a reason (`-- why` for ESLint, text after `@ts-expect-error`, or a comment on the line above).
  *
@@ -644,7 +609,8 @@ function suppressionsAndArgv(repo) {
     const lines = source.split("\n");
     /** @param {number} offset */
     const lineOf = (offset) => source.slice(0, offset).split("\n").length;
-    for (const { index, raw } of commentsOf(source)) {
+    const comments = commentsOf(source, path);
+    for (const { index, raw } of comments) {
       const found = directive.exec(body(raw).trim());
       if (!found) continue;
       const rest = found[2] ?? "";
@@ -654,6 +620,11 @@ function suppressionsAndArgv(repo) {
       const line = lineOf(index);
       const above = (lines[line - 2] ?? "").trim();
       const explained =
+        comments.some(
+          (comment) =>
+            lineOf(comment.index) <= line - 1 &&
+            lineOf(comment.index + comment.raw.length) >= line - 1,
+        ) &&
         /^(?:\/\/|\/\*|\*)/.test(above) &&
         !directive.test(body(above).trim()) &&
         explains.test(above);
@@ -705,15 +676,20 @@ function legacyMarkers(repo) {
  * @type {Rule}
  */
 function skippedTests(repo) {
-  return scanLines(repo, testGlobs, [
-    {
-      rule: "skipped-test",
-      pattern:
-        /\b(?:describe|it|test|suite|context)\.(?:skip|todo)\s*\(|\b(?:xit|xdescribe|xtest)\s*\(|[{,]\s*(?:skip|todo)\s*:\s*(?:true|["'`])/,
-      message:
-        "skipped test: fix it or delete it; a conditional skip needs an allowlist entry with the reason",
-    },
-  ]);
+  return repo.paths
+    .filter((path) => matches(path, testGlobs) && !matches(path, skillCopies))
+    .flatMap((path) => {
+      const source = repo.read(path);
+      const lines = source.split(/\r\n|[\r\n\u2028\u2029]/);
+      return skippedTestLines(source, path).map((line) => ({
+        rule: "skipped-test",
+        path,
+        line,
+        text: lines[line - 1] ?? "",
+        message:
+          "skipped test: fix it or delete it; a conditional skip needs an allowlist entry with the reason",
+      }));
+    });
 }
 
 /**
@@ -724,29 +700,41 @@ function skippedTests(repo) {
 function eslintConfigOverrides(repo) {
   /** @type {Finding[]} */
   const findings = [];
-  const ruleOff =
-    /^\s*["']?[@\w/.-]+["']?\s*:\s*(?:["'](?:off|warn)["']|0\b|\[\s*(?:["'](?:off|warn)["']|0\b))/;
   for (const path of repo.paths.filter((p) =>
     matches(p, "**/eslint.config.{js,mjs,cjs,ts,mts,cts}"),
   )) {
-    const lines = repo.read(path).split("\n");
-    lines.forEach((text, index) => {
-      if (!ruleOff.test(text) || /\/\/|\/\*/.test(text)) return;
-      // Walk back over the rule lines of the same group to the comment that explains them.
-      for (let back = index - 1; back >= 0; back -= 1) {
-        const previous = (lines[back] ?? "").trim();
-        if (/^(?:\/\/|\/\*|\*)/.test(previous)) return;
-        if (!ruleOff.test(lines[back] ?? "") && previous !== "") break;
+    const source = repo.read(path);
+    const lines = source.split(/\r\n|[\r\n\u2028\u2029]/);
+    const { ranges, commentLines } = severityLocations(source, path);
+    const reported = new Set();
+    for (const { start, end } of ranges) {
+      if (reported.has(start)) continue;
+      let explained = [...commentLines].some(
+        (line) => line >= start && line <= end,
+      );
+      for (let back = start - 1; !explained && back > 0; back -= 1) {
+        const previous = (lines[back - 1] ?? "").trim();
+        if (commentLines.has(back) && /^(?:\/\/|\/\*|\*)/.test(previous)) {
+          explained = true;
+          break;
+        }
+        if (
+          previous !== "" &&
+          !ranges.some((range) => back >= range.start && back <= range.end)
+        )
+          break;
       }
+      if (explained) continue;
+      reported.add(start);
       findings.push({
         rule: "eslint-rule-off-without-reason",
         path,
-        line: index + 1,
+        line: start,
         message:
           "a rule is turned off or down without a comment: fix the code, or say why on the line above",
-        text,
+        text: lines[start - 1] ?? "",
       });
-    });
+    }
   }
   return findings;
 }
