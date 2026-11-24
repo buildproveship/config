@@ -33,7 +33,7 @@ on:
         type: string
         default: ""
       cache-key-files:
-        description: Glob of the files whose hash keys the build cache.
+        description: Build-input glob (including assets/generators outside src when needed). Shared keys also include manifests, npm locks, configs and the Node version file.
         type: string
         default: "src/**"
 permissions:
@@ -64,7 +64,8 @@ jobs:
           # (test-data-management's openapi:check runs `git ls-tree origin/main`). The credential is not kept, so a
           # script cannot fetch it later.
           fetch-depth: 0
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - id: node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: ${{ inputs.node-version-file }}
           cache: npm
@@ -75,7 +76,9 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ inputs.cache-paths }}
-          key: build-${{ runner.os }}-${{ hashFiles(inputs.cache-key-files, 'package-lock.json') }}
+          # Invalidate on build configuration/dependency changes as well as caller-selected sources.
+          # Keep project-specific assets/generators in cache-key-files; there is no universal build-input list.
+          key: build-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles(inputs.cache-key-files, '**/package.json', '**/package-lock.json', '**/npm-shrinkwrap.json', '**/tsconfig*.json', '**/*config.*', inputs.node-version-file) }}
       - name: Install dependencies
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
