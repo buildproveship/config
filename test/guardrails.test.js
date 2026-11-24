@@ -199,7 +199,7 @@ describe("releaseready-guardrails rules", () => {
       hits.filter((h) => h.startsWith("unpublished-internal-dependency")),
       [
         "unpublished-internal-dependency package.json:3",
-        "unpublished-internal-dependency package.json:6",
+        "unpublished-internal-dependency package.json:7",
       ],
     );
   });
