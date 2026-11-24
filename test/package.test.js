@@ -1,5 +1,6 @@
+// Classification: integration; synthetic package/config fixtures; Not Reviewed.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { test } from "node:test";
 import * as prettier from "prettier";
@@ -21,7 +22,11 @@ test("every export target exists and the tsconfig base is strict", async () => {
   const pkg = JSON.parse(
     await readFile(new URL("../package.json", import.meta.url), "utf8"),
   );
-  for (const subpath of Object.keys(pkg.exports)) {
+  for (const [subpath, target] of Object.entries(pkg.exports)) {
+    if (typeof target === "object" && target !== null && "types" in target) {
+      assert.equal(typeof target.types, "string", `${subpath} types target`);
+      await access(new URL(`../${String(target.types)}`, import.meta.url));
+    }
     assert.ok(
       require.resolve(`@buildproveship/config${subpath.slice(1)}`),
       subpath,
