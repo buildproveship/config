@@ -47,7 +47,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     permissions:
       pull-requests: read
-    uses: ./.github/workflows/classify-changes.yml
+    uses: $/.github/workflows/classify-changes.yml
     with:
       runner: ${{ inputs.runner }}
       docs-only-pattern: ${{ inputs.docs-only-pattern }}

@@ -482,7 +482,7 @@ test("the reusable CI workflow keeps fork PRs off the self-hosted runner and ski
   assert.equal(inputs["docs-only-pattern"]?.default, DOCS_ONLY_PATTERN);
   for (const [name, job] of Object.entries(ci.jobs)) {
     if (name === "changes") {
-      assert.equal(job.uses, "./.github/workflows/classify-changes.yml");
+      assert.equal(job.uses, "$/.github/workflows/classify-changes.yml");
       assert.equal(job.with?.["runner"], "${{ inputs.runner }}");
       assert.equal(
         workflow(".github/workflows/classify-changes.yml").jobs["classify"]?.[

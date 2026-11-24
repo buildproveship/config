@@ -127,7 +127,7 @@ test("required ci keeps failure behavior and reports docs-only checks as not run
 test("classification is toolchain-independent and wired to the same-commit shared workflow", () => {
   assert.equal(
     ci.jobs.changes.uses,
-    "./.github/workflows/classify-changes.yml",
+    "$/.github/workflows/classify-changes.yml",
   );
   assert.equal(
     ci.jobs.changes.with["docs-only-pattern"],
