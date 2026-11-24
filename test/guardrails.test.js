@@ -5,11 +5,12 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { describe, test } from "node:test";
+import { after, describe, test } from "node:test";
 import {
   applyAllowlist,
   baseline,
@@ -17,6 +18,9 @@ import {
   loadConfig,
 } from "../guardrails/index.js";
 import { syncSkill } from "../guardrails/skill.js";
+
+const fixtureRoot = mkdtempSync(join(tmpdir(), "config-guardrails-"));
+after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
 
 const cli = join(import.meta.dirname, "..", "guardrails", "cli.js");
 
@@ -27,7 +31,7 @@ const cli = join(import.meta.dirname, "..", "guardrails", "cli.js");
  * @param {{ skill?: boolean }} [options]
  */
 async function repo(files, options = {}) {
-  const root = mkdtempSync(join(tmpdir(), "guardrails-"));
+  const root = mkdtempSync(join(fixtureRoot, "guardrails-"));
   execFileSync("git", ["init", "-q"], { cwd: root });
   const all = {
     "AGENTS.md": "Read skills/buildproveship-code-quality/SKILL.md.\n",

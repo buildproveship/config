@@ -26,12 +26,14 @@ export function install(root) {
     process.chdir(previous);
   }
   mkdirSync(join(root, ".husky"), { recursive: true });
+  // POSIX shell single quotes preserve spaces, dollar signs and backticks; escape an embedded apostrophe.
+  const cliPath = relative(root, CLI).replaceAll("'", "'\\''");
   for (const hook of HOOKS) {
     // The path from the repo root to this package's cli.js works wherever the package is hoisted, and in this repo.
     // `"$@"` passes git's arguments (the commit-msg file).
     writeFileSync(
       join(root, ".husky", hook),
-      `node ${relative(root, CLI)} ${hook} "$@"\n`,
+      `node '${cliPath}' ${hook} "$@"\n`,
     );
   }
   return 0;

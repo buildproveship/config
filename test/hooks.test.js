@@ -10,16 +10,20 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import { parse } from "yaml";
 import { DOCS_ONLY_PATTERN } from "../hooks/paths.js";
 import { capture } from "../hooks/run.js";
+
+const fixtureRoot = mkdtempSync(join(tmpdir(), "config-hooks-"));
+after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
 
 const REPO = fileURLToPath(new URL("../", import.meta.url));
 const CLI = join(REPO, "hooks/cli.js");
@@ -71,7 +75,7 @@ function write(cwd, name, content) {
  * @param {Record<string, string>} files committed on main
  */
 function makeRepo(files = {}) {
-  const base = mkdtempSync(join(tmpdir(), "rr hooks "));
+  const base = mkdtempSync(join(fixtureRoot, "rr hooks "));
   const origin = join(base, "origin.git");
   git(base, "init", "--bare", "--initial-branch=main", origin);
   /** @param {string} name */
@@ -169,7 +173,7 @@ test("pre-commit blocks a leaked secret", () => {
 });
 
 test("commit-msg blocks a subject with no Jira key", () => {
-  const dir = mkdtempSync(join(tmpdir(), "rr-msg-"));
+  const dir = mkdtempSync(join(fixtureRoot, "rr-msg-"));
   /** @param {string} message */
   const check = (message) => {
     const file = join(dir, "COMMIT_EDITMSG");
@@ -436,7 +440,7 @@ test("install points git at Husky and writes the three hooks; CI skips it", () =
   assert.equal(git(work, "config", "core.hooksPath"), ".husky/_");
   for (const hook of ["pre-commit", "commit-msg", "pre-push"]) {
     const text = readFileSync(join(work, ".husky", hook), "utf8");
-    assert.ok(text.endsWith(`hooks/cli.js ${hook} "$@"\n`), text);
+    assert.ok(text.endsWith(`hooks/cli.js' ${hook} "$@"\n`), text);
   }
   // The installed hook really runs: a bad subject is rejected through git itself.
   write(work, "x.js", "export const x = 1;\n");
@@ -521,7 +525,7 @@ test("the docs-only step skips checks for docs-only PRs and nothing else", () =>
     (candidate) => candidate.id === "diff",
   );
   assert.ok(step?.run);
-  const dir = mkdtempSync(join(tmpdir(), "rr-gh-"));
+  const dir = mkdtempSync(join(fixtureRoot, "rr-gh-"));
   const fakeGh = join(dir, "gh");
   const calls = join(dir, "calls");
   // The real gh applies the --jq filter; this stand-in prints the file named by FAKE_FILES (a long list does not fit in the environment) and records the arguments it was given.
