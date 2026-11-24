@@ -137,7 +137,9 @@ the full commit sha of a release tag:
   skipped run counts as passed. It runs `check-command` (default `npx releaseready-hooks verify`).
 - [`reusable-nightly.yml`](.github/workflows/reusable-nightly.yml): the full E2E (`npm run check:full`) on a schedule.
 - [`templates/copilot-setup-steps.yml`](templates/copilot-setup-steps.yml): the Copilot coding agent's environment
-  (Node and `npm ci`). The agent rules tell it to run `npx releaseready-hooks verify` before it opens a pull request.
+  base example (Node and `npm ci`), not a complete hook environment. Before running hooks, install `gitleaks`
+  on PATH using the [shared action](.github/actions/install-gitleaks) pinned to the full commit SHA of the chosen release.
+  The rollout renderer adds that step; a direct copy of the example does not. The agent rules tell it to run `npx releaseready-hooks verify` before it opens a pull request.
 
 The `runner` input defaults to the self-hosted `rr-local` runner, which costs no Actions minutes. **Pull requests from
 forks always run on `ubuntu-24.04`**: this repo and its consumers can be public, and the self-hosted runner must never

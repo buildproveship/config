@@ -1,4 +1,7 @@
-# Copy to .github/workflows/copilot-setup-steps.yml. The Copilot coding agent runs the `copilot-setup-steps` job
+# Base example for .github/workflows/copilot-setup-steps.yml; not a complete hook environment.
+# Install gitleaks on PATH before running hooks (see README.md, CI workflows).
+# The rollout renderer adds the released install-gitleaks action; copying this file alone does not.
+# The Copilot coding agent runs the `copilot-setup-steps` job
 # before it starts, so the agent can run `npx releaseready-hooks verify` (the same check CI runs) before opening a PR;
 # templates/copilot-instructions.md tells it to.
 name: Copilot setup steps

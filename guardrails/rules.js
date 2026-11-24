@@ -819,13 +819,29 @@ function oldBrand(repo) {
       !matches(p, brandHistoryPaths) &&
       !matches(p, skillCopies),
   )) {
-    let fenced = false;
+    /** @type {string | undefined} */
+    let fence;
     repo
       .read(path)
-      .split("\n")
+      .split(/\r\n|\r|\n/)
       .forEach((text, index) => {
-        if (/^\s*(?:```|~~~)/.test(text)) fenced = !fenced;
-        if (fenced) return; // code blocks quote identifiers, paths and fixtures that code changes rename
+        // CommonMark fences close only with the same character and at least the opening length.
+        const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(text);
+        const run = marker?.[1];
+        const info = marker?.[2] ?? "";
+        if (fence) {
+          if (
+            run?.[0] === fence[0] &&
+            run.length >= fence.length &&
+            !info.trim()
+          )
+            fence = undefined;
+          return;
+        }
+        if (run && (run[0] !== "`" || !info.includes("`"))) {
+          fence = run;
+          return;
+        }
         const prose = text
           .replace(/`[^`]*`/g, "")
           .replace(/https?:\/\/\S+/g, "");
