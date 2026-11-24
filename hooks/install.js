@@ -18,7 +18,10 @@ export function install(root) {
   process.chdir(root);
   try {
     const problem = husky();
-    if (problem) console.error(`husky: ${problem}`);
+    if (problem) {
+      console.error(`husky: ${problem}`);
+      return 1;
+    }
   } finally {
     process.chdir(previous);
   }

@@ -5,6 +5,7 @@ import { commitMsg } from "./commit-msg.js";
 import { install } from "./install.js";
 import { preCommit } from "./pre-commit.js";
 import { prePush } from "./pre-push.js";
+import { capture } from "./run.js";
 
 const USAGE = `releaseready-hooks <command>
 
@@ -16,9 +17,8 @@ const USAGE = `releaseready-hooks <command>
 
 const [command, ...rest] = process.argv.slice(2);
 const root =
-  spawnSync("git", ["rev-parse", "--show-toplevel"], {
-    encoding: "utf8",
-  }).stdout.trim() || process.cwd();
+  capture("git", ["rev-parse", "--show-toplevel"]).stdout.trim() ||
+  process.cwd();
 
 switch (command) {
   case "install":

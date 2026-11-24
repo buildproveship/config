@@ -44,6 +44,7 @@
       "description": "All @buildproveship/* updates in one PR, never automerged.",
       "matchPackageNames": ["@buildproveship/*"],
       "groupName": "@buildproveship packages",
+      "rangeStrategy": "bump",
       "automerge": false
     },
     {
