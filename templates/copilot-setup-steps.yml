@@ -1,6 +1,5 @@
-# Base example for .github/workflows/copilot-setup-steps.yml; not a complete hook environment.
-# Install gitleaks on PATH before running hooks (see README.md, CI workflows).
-# The rollout renderer adds the released install-gitleaks action; copying this file alone does not.
+# Copy to .github/workflows/copilot-setup-steps.yml and replace <sha> with the full commit SHA of the chosen Config release.
+# The shared installer supplies pinned, checksum-verified gitleaks for the commit hooks.
 # The Copilot coding agent runs the `copilot-setup-steps` job
 # before it starts, so the agent can run `npx releaseready-hooks verify` (the same check CI runs) before opening a PR;
 # templates/copilot-instructions.md tells it to.
@@ -23,6 +22,7 @@ jobs:
           cache: npm
           registry-url: https://npm.pkg.github.com
           scope: "@buildproveship"
+      - uses: buildproveship/config/.github/actions/install-gitleaks@<sha>
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
