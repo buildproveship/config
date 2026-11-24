@@ -3,14 +3,14 @@ rules:
     ignore:
       # Reason: we publish to GitHub Packages (npm.pkg.github.com), which has no OIDC trusted publishing; the
       # GITHUB_TOKEN with packages: write is the supported credential.
-      - release.yml:36
+      - release.yml:44
   self-repository:
     ignore:
       # Reason: "$/..." is rejected by the semgrep github-actions-mutable-action-tag rule, which wants @sha; the
       # local "./" path is the form every tool understands.
       - pr.yml:28
       - pr.yml:43
-      - release.yml:32
+      - release.yml:40
       - copilot-setup-steps.yml:23
   github-env:
     ignore:

@@ -91,3 +91,24 @@ test("release provenance shell accepts main history and fails closed on missing 
   assert.equal(failed.status, 73);
   assert.match(failed.stderr, /synthetic Git lookup failure/);
 });
+
+// Existing exceptions are line-specific; inserting the guard must not silently move their targets.
+test("release scanner exceptions still identify the unchanged publishing and installer steps", () => {
+  const lines = readFileSync(
+    new URL("../.github/workflows/release.yml", import.meta.url),
+    "utf8",
+  ).split("\n");
+  const config = parse(
+    readFileSync(new URL("../.github/zizmor.yml", import.meta.url), "utf8"),
+  );
+  for (const [rule, expected] of [
+    ["use-trusted-publishing", "run: npm publish"],
+    ["self-repository", "- uses: ./.github/actions/install-gitleaks"],
+  ]) {
+    const target = config.rules[rule].ignore.find(
+      /** @param {string} value */ (value) => value.startsWith("release.yml:"),
+    );
+    assert.ok(target);
+    assert.equal(lines[Number(target.split(":")[1]) - 1]?.trim(), expected);
+  }
+});
