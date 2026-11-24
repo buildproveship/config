@@ -138,7 +138,7 @@ the full commit sha of a release tag:
 - [`reusable-nightly.yml`](.github/workflows/reusable-nightly.yml): the full E2E (`npm run check:full`) on a schedule.
 - [`templates/copilot-setup-steps.yml`](templates/copilot-setup-steps.yml): the Copilot coding agent's environment
   installs Node, dependencies and the pinned, checksum-verified `gitleaks` prerequisite through the [shared action](.github/actions/install-gitleaks).
-  Replace `<sha>` with the full commit SHA of the chosen Config release before using the copied workflow; the rollout renderer fills it in automatically.
+  The copied workflow includes an immutable installer reference; the rollout renderer substitutes the already-selected Config release SHA.
   Both paths install the scanner once. The agent rules tell it to run `npx releaseready-hooks verify` before it opens a pull request.
 
 The `runner` input defaults to the self-hosted `rr-local` runner, which costs no Actions minutes. **Pull requests from

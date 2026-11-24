@@ -81,7 +81,7 @@ export function renderCopilotSetup(sha) {
     "# Runs before the Copilot coding agent starts, so it can run `npx releaseready-hooks verify` and its commit hooks.\n" +
     template("templates/copilot-setup-steps.yml")
       .replace(/^(#.*\n)+/, "")
-      .replace("<sha>", sha)
+      .replace(/(install-gitleaks@)[a-f0-9]{40}/, `$1${sha}`)
   );
 }
 

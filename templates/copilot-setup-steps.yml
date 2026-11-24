@@ -1,4 +1,4 @@
-# Copy to .github/workflows/copilot-setup-steps.yml and replace <sha> with the full commit SHA of the chosen Config release.
+# Copy to .github/workflows/copilot-setup-steps.yml. The installer is pinned to an existing Config release.
 # The shared installer supplies pinned, checksum-verified gitleaks for the commit hooks.
 # The Copilot coding agent runs the `copilot-setup-steps` job
 # before it starts, so the agent can run `npx releaseready-hooks verify` (the same check CI runs) before opening a PR;
@@ -22,7 +22,7 @@ jobs:
           cache: npm
           registry-url: https://npm.pkg.github.com
           scope: "@buildproveship"
-      - uses: buildproveship/config/.github/actions/install-gitleaks@<sha>
+      - uses: buildproveship/config/.github/actions/install-gitleaks@8c60fd8e1bedfa53f8f5e6ffd3edbab546514d17
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
