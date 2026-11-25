@@ -297,9 +297,30 @@ function clone(name, into) {
  * Uses gh's supported PR query and Git's remote-ref query before cloning or changing a consumer.
  * @param {Repo} repo
  * @param {string} branch
+ * @param {string} defaultBranch
  * @returns {string | null}
  */
-function existingRollout(repo, branch) {
+function existingRollout(repo, branch, defaultBranch) {
+  // A fresh attempt must not duplicate active work on the task's original branch.
+  if (branch !== defaultBranch) {
+    /** @type {{ state: string, url: string }[]} */
+    const previous = JSON.parse(
+      run("gh", [
+        "pr",
+        "list",
+        "--repo",
+        `buildproveship/${repo.name}`,
+        "--head",
+        defaultBranch,
+        "--state",
+        "open",
+        "--json",
+        "state,url",
+      ]),
+    );
+    const open = previous.find((pr) => pr.state === "OPEN");
+    if (open) return open.url;
+  }
   /** @type {{ state: string, url: string }[]} */
   const prs = JSON.parse(
     run("gh", [
@@ -319,7 +340,7 @@ function existingRollout(repo, branch) {
     const open = prs.find((pr) => pr.state === "OPEN");
     if (open) return open.url;
     throw new Error(
-      `${repo.name}: rollout PR already closed; inspect it before choosing a new rollout branch`,
+      `${repo.name}: rollout PR already closed; inspect it before choosing a fresh --branch`,
     );
   }
   const remote = run("git", [
@@ -380,11 +401,12 @@ Existing managed workflows retain their triggers, permissions, runners and steps
  * @param {Repo} repo
  * @param {Change[]} changes
  * @param {string} work scratch directory for the npm auth file
+ * @param {string} branch validated destination branch
  */
-function apply(dir, repo, changes, work) {
+function apply(dir, repo, changes, work, branch) {
   const git = (/** @type {string[]} */ ...args) =>
     run("git", args, { cwd: dir });
-  git("checkout", "-b", BRANCH);
+  git("checkout", "-b", branch);
   for (const { path, after } of changes)
     if (!path.startsWith(".husky/") && after !== null) {
       mkdirSync(join(dir, path, ".."), { recursive: true });
@@ -421,7 +443,7 @@ function apply(dir, repo, changes, work) {
     "-m",
     `RRDPLAT-105: shared Husky hooks and lean CI (config ${loadRepos().release})\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`,
   );
-  git("push", "-u", "origin", BRANCH);
+  git("push", "-u", "origin", branch);
   return run(
     "gh",
     [
@@ -431,7 +453,7 @@ function apply(dir, repo, changes, work) {
       "--repo",
       `buildproveship/${repo.name}`,
       "--head",
-      BRANCH,
+      branch,
       "--title",
       "RRDPLAT-105: shared Husky hooks and lean CI",
       "--body",
@@ -446,9 +468,9 @@ function apply(dir, repo, changes, work) {
  * @param {string} dir
  * @param {Repo} repo
  * @param {Change[]} changes
+ * @param {string} branch validated destination branch
  */
-function applyDeliveryRules(dir, repo, changes) {
-  const branch = DELIVERY_BRANCH;
+function applyDeliveryRules(dir, repo, changes, branch) {
   const git = (/** @type {string[]} */ ...args) =>
     run("git", args, { cwd: dir });
   git("checkout", "-b", branch);
@@ -487,6 +509,7 @@ function main() {
       apply: { type: "boolean" },
       repo: { type: "string", multiple: true },
       task: { type: "string", default: "hooks" },
+      branch: { type: "string" },
     },
   });
   if (!["hooks", "delivery-rules"].includes(values.task))
@@ -494,6 +517,16 @@ function main() {
   const knownRepos = loadRepos().repos.map((repo) => repo.name);
   for (const name of values.repo ?? [])
     if (!knownRepos.includes(name)) throw new Error(`unknown repo: ${name}`);
+  const defaultBranch =
+    values.task === "delivery-rules" ? DELIVERY_BRANCH : BRANCH;
+  const branch = values.branch ?? defaultBranch;
+  if (values.branch !== undefined) {
+    if (branch === "main") throw new Error("rollout branch must not be main");
+    // Git owns ref syntax. Reject checkout-history shorthand: the caller must name an explicit branch.
+    if (run("git", ["check-ref-format", "--branch", branch]) !== branch)
+      throw new Error("pass an explicit rollout branch name");
+  }
+  console.log(`Rollout branch: ${branch}`);
   if (values.task === "delivery-rules") {
     if (values["dry-run"] === values.apply)
       throw new Error("pass exactly one of --dry-run and --apply");
@@ -501,7 +534,7 @@ function main() {
     for (const repo of loadRepos().repos) {
       if (values.repo && !values.repo.includes(repo.name)) continue;
       const existing = values.apply
-        ? existingRollout(repo, DELIVERY_BRANCH)
+        ? existingRollout(repo, branch, defaultBranch)
         : null;
       if (existing) {
         console.log(`${repo.name}: existing PR (not updated): ${existing}`);
@@ -513,7 +546,7 @@ function main() {
         `## ${repo.name}: ${changes.length > 0 ? `M ${changes[0]?.path}` : "already has the section"}`,
       );
       if (values.apply && changes.length > 0)
-        console.log(applyDeliveryRules(dir, repo, changes));
+        console.log(applyDeliveryRules(dir, repo, changes, branch));
     }
     return;
   }
@@ -532,7 +565,9 @@ function main() {
         console.log(`skipped: ${repo.skip}`);
         continue;
       }
-      const existing = values.apply ? existingRollout(repo, BRANCH) : null;
+      const existing = values.apply
+        ? existingRollout(repo, branch, defaultBranch)
+        : null;
       if (existing) {
         console.log(`${repo.name}: existing PR (not updated): ${existing}`);
         continue;
@@ -546,7 +581,7 @@ function main() {
       if (values.apply) {
         if (warnings.length > 0)
           throw new Error(`${repo.name}: resolve the warnings before --apply`);
-        console.log(apply(dir, repo, changes, work));
+        console.log(apply(dir, repo, changes, work, branch));
       }
     }
   } finally {

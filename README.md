@@ -231,6 +231,13 @@ private workflows needing runner migration also require review. Other workflows 
 First establish which checks are necessary and verify their coverage in the shared workflow or explicit shared
 inputs. A similar job name is not evidence that a check is redundant.
 
+For a later rollout attempt, inspect the previous attempt first, then select a fresh branch with
+`--branch <name>` on either task. The dry run prints the selected branch. The default task branch is unchanged.
+An existing open PR on the task’s default or selected branch is reported without changes, so a fresh attempt does
+not duplicate active work. A closed PR or an orphan branch on the selected branch still
+stops the apply. The tool never resets, force-pushes, reopens or overwrites that branch. Branch names are validated
+by Git, and `main` and checkout-history shorthand are rejected before remote operations.
+
 ## Releasing
 
 Bump `version` in `package.json`, add a `CHANGELOG.md` entry, merge, then push a tag `vX.Y.Z` on `main`. The Release
