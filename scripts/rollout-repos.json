@@ -14,7 +14,8 @@
     },
     {
       "name": "buildproveship-product-tests",
-      "private": true
+      "private": true,
+      "checkCommand": "npx playwright install --only-shell chromium && npm run check"
     },
     {
       "name": "test-management",
@@ -24,7 +25,7 @@
     {
       "name": "test-data-management",
       "private": true,
-      "checkCommand": "npm run contracts:setup && npm run dependencies:check && npm run openapi:check && npm run format:check && npm run lint && npm run check:guardrails && npm run typecheck && npm run build && npm test"
+      "checkCommand": "chmod -R go-w \"$(dirname \"$(dirname \"$(command -v node)\")\")\" && npm run contracts:setup && npm run dependencies:check && npm run openapi:check && npm run format:check && npm run lint && npm run check:guardrails && npm run typecheck && npm run build && npm test"
     },
     {
       "name": "universal-api-framework",
