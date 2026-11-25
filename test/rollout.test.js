@@ -96,7 +96,7 @@ test("the plan sets the dependency and prepare script, and reports hook generati
   const pkg = JSON.parse(
     changes.find((change) => change.path === "package.json")?.after ?? "",
   );
-  assert.equal(pkg.devDependencies["@buildproveship/config"], "^4.2.0");
+  assert.equal(pkg.devDependencies["@buildproveship/config"], "^5.2.0");
   assert.equal(pkg.devDependencies.zod, "^4.0.0");
   assert.equal(pkg.scripts.prepare, "releaseready-hooks install");
   assert.deepEqual(actions, ["npx --no-install releaseready-hooks install"]);
@@ -260,4 +260,20 @@ test("the delivery rules section comes from templates/AGENTS.md, links both page
     planDeliveryRules(repoDir({ "AGENTS.md": change?.after ?? "" })),
     [],
   );
+});
+
+test("the rollout accepts consumers already on the published governance release", () => {
+  const dir = repoDir({
+    "package.json": JSON.stringify({
+      scripts: { check: "true" },
+      devDependencies: { "@buildproveship/config": "^5.2.0" },
+    }),
+  });
+  const plan = planRepo(dir, { name: "synthetic", private: false }, SHA);
+  assert.deepEqual(plan.warnings, []);
+  const pkg = JSON.parse(
+    plan.changes.find((change) => change.path === "package.json")?.after ??
+      "{}",
+  );
+  assert.equal(pkg.devDependencies["@buildproveship/config"], "^5.2.0");
 });
