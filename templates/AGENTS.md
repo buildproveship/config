@@ -17,3 +17,4 @@ The check command is `<command>`; it runs `npm run check:guardrails`, which `pr.
 - Read only the ticket's **Agent brief** first ([template](https://noisegatemusicstudios.atlassian.net/wiki/spaces/RRDOCS/pages/26411190): Goal, Files, Done when, Blocked by/Reuses, Model); history and background are in the comments.
 - Before you create a ticket, a branch or a helper, search Jira and the Reuse first list, then extend or link what exists.
 - Fetch and rebase on `origin/main` before every push, open draft pull requests, and run the checks locally before CI.
+- Push once: keep the pull request a draft until the full local check passes, then push and mark it ready in the same turn. Every push to a ready pull request starts CI, and CI minutes are capped (US$10/month across the org); do not push fixes one at a time to a ready pull request. Run `npm run check:workflow-cost` on `.github/workflows` before adding or changing a workflow.

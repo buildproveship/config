@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Push-once rule (RRDPLAT-114): the delivery rules in `AGENTS.md` and `templates/AGENTS.md` tell agents to keep a pull request a draft until the full local check passes, then push and mark it ready in the same turn. `npm run check:workflow-cost` also fails a hosted job on `pull_request` that does not skip drafts.
+
 ## 6.1.0 (2026-11-25)
 
 Actions budget guardrails (RRDPLAT-114). The org's US$10/month Actions budget was spent on 25 Nov 2026.
