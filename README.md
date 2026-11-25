@@ -119,6 +119,18 @@ A change that touches only `*.md`, `docs/` or `LICENSE` skips type-check and tes
 
 `npx releaseready-hooks verify` runs `npm run check`, the same command CI runs.
 
+`npx releaseready-hooks verify-clean` checks committed `HEAD` in a disposable local clone: normal `npm ci`
+(including lifecycle scripts), then `npm run check`. It requires a committed npm lockfile. Dependencies and generated
+outputs must be produced by those ordinary commands; it does not borrow the caller's `node_modules`, ignored output
+or untracked helpers. Paths with spaces are supported. The caller's files and Git configuration are left untouched,
+and the temporary clone is removed on normal success or failure. A terminated process can leave its temporary clone.
+
+This explicit verification does not change the faster `verify` or pre-push behavior. It tests committed code, so
+uncommitted edits are not included. Normal npm authentication and tool availability still apply. The clone retains
+Git history, the caller's fetched `origin/main` and configured hook location; its remote points to the local source clone, not to a hosted
+service. Checks requiring other external state or custom bootstrap steps still need their project-specific setup.
+The command is not a process sandbox.
+
 ### `--no-verify`
 
 `git commit --no-verify` and `git push --no-verify` skip every hook above. **Agents must never use them**, never disable
