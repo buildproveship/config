@@ -1,16 +1,20 @@
+// Classification: integration; synthetic temporary fixtures; Not Reviewed.
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import { allureReporter } from "@buildproveship/config/allure";
 import { loadEnv } from "@buildproveship/config/dotenv";
+
+const fixtureRoot = mkdtempSync(join(tmpdir(), "config-shared-setup-"));
+after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
 
 const require = createRequire(import.meta.url);
 
 test("loadEnv fills the target from a .env file and keeps values already set", () => {
-  const file = join(mkdtempSync(join(tmpdir(), "env-")), ".env");
+  const file = join(mkdtempSync(join(fixtureRoot, "env-")), ".env");
   writeFileSync(file, "SYNTHETIC_A=from-file\nSYNTHETIC_B=from-file\n");
   const target = { SYNTHETIC_B: "already-set" };
   const parsed = loadEnv({ path: file, processEnv: target });
