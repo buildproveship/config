@@ -9,7 +9,6 @@
     {
       "name": "frontend-ui",
       "private": true,
-      "selfHosted": true,
       "checkCommand": "npm run build:design-system && npm run typecheck && npm run lint && npm run format:check && npm run test:checks && npm run build:library:page && npm run check:guardrails && npm run check:licences && npm run check:code-quality && npm run build:design:vite && npx playwright install chromium && npx playwright test --project=pr-axe"
     },
     {

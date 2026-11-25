@@ -1,7 +1,11 @@
 # Changelog
 
-## Unreleased
+## 6.2.0 (2026-11-25)
 
+All repos run on the self-hosted Mac runner (owner decision, "All savings, CI on your Mac", 25 Nov 2026, RRDPLAT-114).
+
+- `reusable-ci.yml` and `reusable-nightly.yml`: the `runner` input now defaults to `rr-local` (was `ubuntu-24.04`), so no repo needs a runner rule of its own. Fork PRs still always run on `ubuntu-24.04`. A consumer that pins 6.2.0 needs the `rr-local` runner registered for its repo or org; one that must stay hosted passes `runner: ubuntu-24.04`.
+- The rollout no longer has a per-repo `selfHosted` field and renders no `runner:` input; every repo is on `rr-local`, so a GitHub-hosted job in any repo is flagged as a runner migration.
 - Push-once rule (RRDPLAT-114): the delivery rules in `AGENTS.md` and `templates/AGENTS.md` tell agents to keep a pull request a draft until the full local check passes, then push and mark it ready in the same turn. `npm run check:workflow-cost` also fails a hosted job on `pull_request` that does not skip drafts.
 
 ## 6.1.0 (2026-11-25)
