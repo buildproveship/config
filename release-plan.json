@@ -1,0 +1,6 @@
+{
+  "version": "6.1.0",
+  "baseCommit": "6ca0305d34ed57c68a5bcef84aaddc597759d543",
+  "classification": "routine",
+  "rationale": "Adds a workflow cost checker (a new script, not an ESLint or guardrails rule), merges the reusable CI jobs into one and moves the nightly template to weekly. No existing guardrails or ESLint rule rejects code it accepted in 6.0.0, so no consumer measurements are needed."
+}
