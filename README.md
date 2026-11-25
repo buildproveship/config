@@ -203,6 +203,19 @@ Python repos cannot consume the ESLint config; observability keeps the equivalen
 its own `pyproject.toml`, runs vulture and pip-audit, uses the same Renovate preset, and runs `releaseready-guardrails`
 through `npx` for the language-neutral rules (legacy markers, README history, skill drift, jscpd).
 
+## Rollout planning
+
+`node scripts/rollout.js --dry-run --repo <name>` reviews a consumer against this repository's shared workflow
+templates. An existing managed workflow can update its pinned shared release while retaining its triggers,
+permissions, runner and setup. A PR-only caller stays PR-only. Missing workflows use the shared templates.
+
+Custom jobs, setup, inputs or permissions require governance review before migration; the planner reports the
+conflicting path and proposes no changes or hook installation for that consumer. Additional PR workflows and
+private workflows needing runner migration also require review. Other workflows are never rewritten incidentally.
+`--apply` refuses these warnings before modifying the checkout, installing dependencies or creating a PR.
+First establish which checks are necessary and verify their coverage in the shared workflow or explicit shared
+inputs. A similar job name is not evidence that a check is redundant.
+
 ## Releasing
 
 Bump `version` in `package.json`, add a `CHANGELOG.md` entry, merge, then push a tag `vX.Y.Z` on `main`. The Release

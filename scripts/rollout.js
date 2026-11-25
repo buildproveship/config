@@ -10,6 +10,7 @@
 import { execFileSync } from "node:child_process";
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   rmSync,
@@ -23,12 +24,14 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { gt, valid } from "semver";
 import { HOOKS } from "../hooks/install.js";
+import {
+  additionalWorkflowReview,
+  updateManagedWorkflow,
+} from "./managed-workflow.js";
 
 const CONFIG_ROOT = fileURLToPath(new URL("../", import.meta.url));
 const BRANCH = "RRDPLAT-105-shared-hooks-and-ci";
 const DELIVERY_BRANCH = "RRDPLAT-103-delivery-rules";
-const HOSTED = /^(\s*runs-on:\s*)ubuntu-[\w.-]+\s*$/gm;
-const SELF_HOSTED = "[self-hosted, rr-local]";
 const AGENTS_MARKER = "## Local hooks and CI";
 const INSTALL_HOOKS = ["--no-install", "releaseready-hooks", "install"];
 
@@ -131,10 +134,60 @@ export function planRepo(dir, repo, sha) {
     if (before !== after) changes.push({ path, before, after });
   };
 
+  // Review workflow differences before proposing any consumer edits or generator actions.
+  for (const path of [".github", ".github/workflows"]) {
+    const stat = lstatSync(join(dir, path), { throwIfNoEntry: false });
+    if (stat && !stat.isDirectory()) {
+      warnings.push(
+        `${path}: governance review required; not an ordinary directory`,
+      );
+      return { changes: [], warnings, actions: [] };
+    }
+  }
+  for (const [path, expected] of [
+    [".github/workflows/pr.yml", renderPr(repo, sha)],
+    [".github/workflows/copilot-setup-steps.yml", renderCopilotSetup(sha)],
+  ]) {
+    if (!path || !expected) throw new Error("missing workflow template");
+    const file = join(dir, path);
+    const stat = lstatSync(file, { throwIfNoEntry: false });
+    if (!stat) put(path, expected);
+    else {
+      const after = stat.isFile()
+        ? updateManagedWorkflow(readFileSync(file, "utf8"), expected, sha)
+        : null;
+      if (after === null)
+        warnings.push(
+          `${path}: governance review required for custom checks, triggers, permissions, runner or setup; preserve until shared parity is verified`,
+        );
+      else put(path, after);
+    }
+  }
+  if (existsSync(join(dir, ".github/workflows")))
+    for (const entry of readdirSync(join(dir, ".github/workflows"), {
+      withFileTypes: true,
+    })) {
+      if (
+        !entry.isFile() ||
+        ["pr.yml", "copilot-setup-steps.yml"].includes(entry.name)
+      )
+        continue;
+      const path = `.github/workflows/${entry.name}`;
+      // Runner relocation is a separate migration, never an incidental text replacement.
+      const review = /\.ya?ml$/.test(entry.name)
+        ? additionalWorkflowReview(read(path) ?? "", repo.private)
+        : null;
+      if (review)
+        warnings.push(
+          `${path}: governance review required for ${review}; workflow preserved`,
+        );
+    }
+  if (warnings.length > 0) return { changes: [], warnings, actions: [] };
+
   const packageText = read("package.json");
   if (packageText === null) {
     warnings.push("no package.json");
-    return { changes, warnings, actions: [] };
+    return { changes: [], warnings, actions: [] };
   }
   const pkg = JSON.parse(packageText);
   const release = loadRepos().release.slice(1);
@@ -150,7 +203,7 @@ export function planRepo(dir, repo, sha) {
       warnings.push(
         `refusing to replace @buildproveship/config ${String(current)} with ^${release}; choose a compatible rollout release`,
       );
-      return { changes, warnings, actions: [] };
+      return { changes: [], warnings, actions: [] };
     }
   }
   pkg.devDependencies = {
@@ -179,22 +232,6 @@ export function planRepo(dir, repo, sha) {
       "no `check` script and no checkCommand in rollout-repos.json: `releaseready-hooks verify` would fail",
     );
   put("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
-
-  put(".github/workflows/pr.yml", renderPr(repo, sha));
-  put(".github/workflows/copilot-setup-steps.yml", renderCopilotSetup(sha));
-  if (repo.private && existsSync(join(dir, ".github/workflows"))) {
-    for (const entry of readdirSync(join(dir, ".github/workflows"), {
-      withFileTypes: true,
-    })) {
-      if (!entry.isFile()) continue;
-      const file = entry.name;
-      if (file !== "pr.yml" && file !== "copilot-setup-steps.yml") {
-        const path = `.github/workflows/${file}`;
-        const before = read(path) ?? "";
-        put(path, before.replace(HOSTED, `$1${SELF_HOSTED}`));
-      }
-    }
-  }
 
   const agents = read("AGENTS.md") ?? "# Agent instructions\n";
   if (!agents.includes(AGENTS_MARKER)) {
@@ -337,7 +374,7 @@ ${files}
 
 Generated hooks (${HOOKS.join(", ")}): run \`npx ${INSTALL_HOOKS.join(" ")}\`. The dry-run lists this action, not placeholder hook-file contents; inspect the generated diff after installation.
 
-Not changed: scheduled and manual workflows other than \`pr.yml\` keep their own steps. The old pull-request security job is dropped: the pre-commit hook runs gitleaks and the reusable workflow runs the one \`ci\` check.
+Existing managed workflows retain their triggers, permissions, runners and steps; only the shared release reference changes. Custom checks or setup require governance review and verified shared parity before migration. Other workflows are preserved; no job is removed as presumed redundant.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)`;
 }

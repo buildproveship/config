@@ -54,8 +54,13 @@ function consumer(isPrivate) {
     repoDir({
       "package.json": PACKAGE,
       "AGENTS.md": "# Agents\n",
-      ".github/workflows/pr.yml": HOSTED_WORKFLOW,
-      ".github/workflows/weekly.yml": HOSTED_WORKFLOW,
+      ".github/workflows/pr.yml": renderPr(
+        { name: "synthetic", private: isPrivate },
+        "b".repeat(40),
+      ),
+      ".github/workflows/weekly.yml": isPrivate
+        ? HOSTED_WORKFLOW.replace("ubuntu-24.04", "[self-hosted, rr-local]")
+        : HOSTED_WORKFLOW,
     }),
     { name: "synthetic", private: isPrivate },
     SHA,
@@ -97,17 +102,13 @@ test("the plan sets the dependency and prepare script, and reports hook generati
   assert.ok(!changes.some((change) => change.path.startsWith(".husky/")));
 });
 
-test("a private repo's hosted runners move to rr-local; a public repo's stay", () => {
-  const privateAfter = consumer(true).changes.find(
-    (change) => change.path === ".github/workflows/weekly.yml",
-  )?.after;
-  assert.match(privateAfter ?? "", /runs-on: \[self-hosted, rr-local\]/);
-  assert.doesNotMatch(privateAfter ?? "", /ubuntu/);
-  assert.ok(
-    !consumer(false).changes.some(
-      (change) => change.path === ".github/workflows/weekly.yml",
-    ),
-  );
+test("other workflows retain their runner choices", () => {
+  for (const privateRepo of [true, false])
+    assert.ok(
+      !consumer(privateRepo).changes.some(
+        (change) => change.path === ".github/workflows/weekly.yml",
+      ),
+    );
 });
 
 test("the caller pr.yml is the template; only a public repo passes the hosted runner", () => {
@@ -141,7 +142,10 @@ test("a repo with no check script, or its own prepare script, is a warning, not 
     repoDir({
       "package.json": JSON.stringify({ scripts: { prepare: "tsc" } }),
       "AGENTS.md": "# Agents\n",
-      ".github/workflows/pr.yml": HOSTED_WORKFLOW,
+      ".github/workflows/pr.yml": renderPr(
+        { name: "synthetic", private: true },
+        "b".repeat(40),
+      ),
     }),
     { name: "synthetic", private: true },
     SHA,
@@ -158,7 +162,10 @@ test("the AGENTS.md note is added once and names ignore-scripts when the repo's 
     "package.json": PACKAGE,
     "AGENTS.md": "# Agents\n",
     ".npmrc": "ignore-scripts=true\n",
-    ".github/workflows/pr.yml": HOSTED_WORKFLOW,
+    ".github/workflows/pr.yml": renderPr(
+      { name: "synthetic", private: true },
+      "b".repeat(40),
+    ),
   };
   const repo = { name: "synthetic", private: true };
   const first = planRepo(repoDir(files), repo, SHA).changes.find(
@@ -193,7 +200,10 @@ test("a repo's extra scripts are added without replacing one it already has", ()
         scripts: { check: "true", lint: "eslint ." },
       }),
       "AGENTS.md": "# Agents\n",
-      ".github/workflows/pr.yml": HOSTED_WORKFLOW,
+      ".github/workflows/pr.yml": renderPr(
+        { name: "synthetic", private: true },
+        "b".repeat(40),
+      ),
     }),
     repo,
     SHA,

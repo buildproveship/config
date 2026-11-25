@@ -13,7 +13,12 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { planRepo } from "../scripts/rollout.js";
+import {
+  planRepo,
+  renderPr,
+  renderCopilotSetup,
+  loadRepos,
+} from "../scripts/rollout.js";
 
 /** @param {import("node:test").TestContext} t */
 function workspace(t) {
@@ -72,8 +77,8 @@ test("private consumers without workflows can be planned and generated hooks hav
   );
 });
 
-/** @param {import("node:test").TestContext} t @param {string[]} args @param {string} scenario */
-function cli(t, args, scenario) {
+/** @param {import("node:test").TestContext} t @param {string[]} args @param {string} scenario @param {Record<string, string>} [files] */
+function cli(t, args, scenario, files = {}) {
   const root = workspace(t);
   const bin = join(root, "bin");
   mkdirSync(bin);
@@ -98,7 +103,18 @@ else if(kind==='gh' && a[0]==='pr' && a[1]==='list'){
  console.log(JSON.stringify(s==='open'?[{state:'OPEN',url:'https://example.invalid/pr/1'}]:s==='closed'?[{state:'CLOSED',url:'https://example.invalid/pr/1'}]:[]));
 }else if(kind==='git' && a[0]==='ls-remote'){
  if(process.env.ROLLOUT_TEST_SCENARIO==='orphan')console.log('a'.repeat(40)+' refs/heads/synthetic');
-}else{console.error('unexpected external command: '+kind+' '+a.join(' '));process.exit(91);}
+ }else if(kind==='git' && a[0]==='clone'){
+ const dir=a.at(-1);fs.mkdirSync(dir,{recursive:true});
+ for(const [p,text] of Object.entries(JSON.parse(process.env.ROLLOUT_TEST_FILES))){fs.mkdirSync(require('node:path').dirname(require('node:path').join(dir,p)),{recursive:true});fs.writeFileSync(require('node:path').join(dir,p),text);}
+}else if(process.env.ROLLOUT_TEST_SCENARIO==='managed' && (
+ (kind==='git' && ['checkout','add','commit','push'].includes(a[0])) ||
+ (kind==='npm' && a.join(' ')==='install --ignore-scripts --no-audit --no-fund') ||
+ (kind==='npx' && ['--no-install prettier --write package.json','--no-install releaseready-hooks install'].includes(a.join(' ')))
+) ){}
+else if(process.env.ROLLOUT_TEST_SCENARIO==='managed' && kind==='sh' && a[0]==='-c' && a[1]===process.env.ROLLOUT_TEST_CHECK){}
+else if(process.env.ROLLOUT_TEST_SCENARIO==='managed' && kind==='gh' && a.join(' ')==='auth token'){console.log('synthetic-fixture-value');}
+else if(process.env.ROLLOUT_TEST_SCENARIO==='managed' && kind==='gh' && a[0]==='pr' && a[1]==='create'){console.log('https://example.invalid/pr/2');}
+else{console.error('unexpected external command: '+kind+' '+a.join(' '));process.exit(91);}
 `,
     );
     chmodSync(path, 0o755);
@@ -117,6 +133,10 @@ else if(kind==='gh' && a[0]==='pr' && a[1]==='list'){
         TMPDIR: root,
         ROLLOUT_TEST_LOG: log,
         ROLLOUT_TEST_SCENARIO: scenario,
+        ROLLOUT_TEST_FILES: JSON.stringify(files),
+        ROLLOUT_TEST_CHECK:
+          loadRepos().repos.find((repo) => repo.name === "test-management")
+            ?.checkCommand ?? "",
       },
     },
   );
@@ -168,4 +188,107 @@ test("closed PRs, orphan branches and failed PR queries stop before consumer cha
       assert.ok(r.calls.includes("credential.helper=!gh auth git-credential"));
     }
   }
+});
+
+const governanceRepo = loadRepos().repos.find(
+  (repo) => repo.name === "test-management",
+);
+if (!governanceRepo) throw new Error("missing synthetic rollout target");
+const oldSha = "b".repeat(40);
+const managedPr = renderPr(governanceRepo, oldSha);
+const managedSetup = renderCopilotSetup(oldSha);
+const consumerFiles = {
+  "package.json": JSON.stringify({ scripts: { check: "true" } }),
+  ".github/workflows/pr.yml": managedPr,
+  ".github/workflows/copilot-setup-steps.yml": managedSetup,
+};
+
+test("rollout CLI refuses custom checks, setup, permissions and runners before any mutation", (t) => {
+  /** @type {Record<string, string>[]} */
+  const cases = [
+    {
+      ".github/workflows/pr.yml": managedPr.replace(
+        "workflows/reusable-ci.yml",
+        "actions/install-gitleaks",
+      ),
+    },
+    {
+      ".github/workflows/pr.yml": managedPr.replace(
+        /buildproveship\/config\/\.github\/workflows\/reusable-ci.yml@[a-f\d]{40}/,
+        "shared-release-reference",
+      ),
+    },
+    {
+      ".github/workflows/extra.yml":
+        "on: pull_request\njobs:\n  custom:\n    runs-on: [self-hosted, rr-local]\n    steps: [{run: 'echo domain-check'}]\n",
+    },
+    {
+      ".github/workflows/pr.yml": managedPr.replace(
+        "    uses:",
+        "    steps: [{run: 'echo local-verify'}]\n    uses:",
+      ),
+    },
+    {
+      ".github/workflows/pr.yml": managedPr.replace(
+        "  contents: read",
+        "  contents: write",
+      ),
+    },
+    {
+      ".github/workflows/pr.yml": managedPr.replace(
+        "    with:",
+        "    with:\n      runner: custom-runner",
+      ),
+    },
+    {
+      ".github/workflows/copilot-setup-steps.yml": managedSetup.replace(
+        "      - run: npm ci",
+        "      - run: echo required-setup\n      - run: npm ci",
+      ),
+    },
+    { ".github/workflows/pr.yml": "jobs: [invalid" },
+    {
+      ".github/workflows/weekly.yml":
+        "jobs:\n  platform:\n    runs-on: ubuntu-24.04\n",
+    },
+  ];
+  for (const changes of cases) {
+    const result = cli(t, ["--apply", "--repo", "test-management"], "custom", {
+      ...consumerFiles,
+      ...changes,
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stdout, /governance review required/);
+    assert.match(result.stderr, /resolve the warnings/);
+    assert.doesNotMatch(
+      result.calls,
+      /"checkout"|"auth","token"|"install"|"push"|"create"/,
+    );
+    assert.doesNotMatch(result.stdout, /^M |^A |^RUN /m);
+  }
+});
+
+test("managed PR-only callers preserve triggers and can pass the real CLI planning boundary", (t) => {
+  const root = workspace(t);
+  const prOnly = managedPr.replace("  push:\n    branches: [main]\n", "");
+  for (const [path, content] of Object.entries({
+    ...consumerFiles,
+    ".github/workflows/pr.yml": prOnly,
+  })) {
+    mkdirSync(join(root, path, ".."), { recursive: true });
+    writeFileSync(join(root, path), content);
+  }
+  const plan = planRepo(root, governanceRepo, "a".repeat(40));
+  assert.deepEqual(plan.warnings, []);
+  assert.equal(
+    plan.changes.find((c) => c.path === ".github/workflows/pr.yml")?.after,
+    prOnly.replaceAll(oldSha, "a".repeat(40)),
+  );
+  const result = cli(t, ["--apply", "--repo", "test-management"], "managed", {
+    ...consumerFiles,
+    ".github/workflows/pr.yml": prOnly,
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /example.invalid\/pr\/2/);
+  assert.match(result.calls, /"npm","install"/);
 });
