@@ -48,12 +48,28 @@ Classification is a visible release-PR decision: reviewers compare the entire di
 with the rationale. The checker validates the declaration, not the semantics of arbitrary rule code;
 a false routine declaration cannot be detected reliably by this command.
 
-For stricter releases, first commit the final proposed release content and measure that commit. Then
-commit only `release-plan.json`, embedding the evidence whose `candidateCommit` identifies the measured
-commit. The gate rejects any other committed content change after measurement, including package version,
-inventory, source and documentation changes. This avoids a self-referencing evidence commit while keeping
-the measured release content exact. Run `npm run release:check` on the final committed tree before merge.
-A later code change requires new measurements. The command reads committed files, not dirty worktree edits.
+## Stricter releases with squash merges
+
+Use two separate PRs so the measured commit remains in main history:
+
+1. Merge the finalized release content, including its package version, through the normal protected
+   squash PR process. Do not create a release tag yet.
+2. Fetch main and measure the actual merged main commit against every consumer. Set `candidateCommit`
+   to that full main SHA, not the topic branch SHA or a local pre-merge commit.
+3. Open a second PR from that main commit changing only `release-plan.json`. Embed the measurements
+   and classification. Merge this plan-only PR through the same normal protected squash process.
+4. Fetch the resulting main and run `npm run release:check` on that committed tree before any tag.
+   A failed check blocks proceeding with a release. Publication remains a separately authorized action.
+
+Do not measure a topic commit and add its plan in the same PR: squash merge replaces those commits,
+and the topic SHA is not an ancestor of resulting main. The gate correctly rejects that evidence even
+when the source trees look identical. Keep the ancestry check; do not substitute a missing topic ref.
+
+Only `release-plan.json` may differ between the measured main commit and release HEAD. Any intervening
+source, package version, inventory or documentation change requires measuring the new actual main commit
+and updating the plan through another PR. This also applies if unrelated changes land while the plan PR
+is open. The command reads committed files, not dirty worktree edits. The two-PR sequence avoids a
+self-referencing evidence commit without relaxing content integrity or the normal squash merge policy.
 
 The gate applies only when the updated workflow executes. It does not prevent tag creation, replace
 branch/tag protections, authorize publication, or retroactively validate old releases.
