@@ -2,7 +2,7 @@
 name: Nightly E2E
 on:
   schedule:
-    - cron: "30 18 * * *" # 02:30 Hong Kong time
+    - cron: "30 18 * * 0" # Sunday 18:30 UTC, Monday 02:30 Hong Kong time; daily hosted runs burn the Actions budget (RRDPLAT-114)
   workflow_dispatch:
 permissions:
   contents: read

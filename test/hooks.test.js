@@ -480,33 +480,16 @@ test("the reusable CI workflow keeps fork PRs off the self-hosted runner and ski
     ).workflow_call.inputs;
   assert.equal(inputs["runner"]?.default, "ubuntu-24.04");
   assert.equal(inputs["docs-only-pattern"]?.default, DOCS_ONLY_PATTERN);
-  for (const [name, job] of Object.entries(ci.jobs)) {
-    if (name === "changes") {
-      assert.equal(job.uses, "$/.github/workflows/classify-changes.yml");
-      assert.equal(job.with?.["runner"], "${{ inputs.runner }}");
-      assert.equal(
-        workflow(".github/workflows/classify-changes.yml").jobs["classify"]?.[
-          "runs-on"
-        ],
-        FORK_GUARD,
-      );
-    } else
-      assert.equal(
-        job["runs-on"],
-        FORK_GUARD,
-        `${name} must use the fork guard`,
-      );
-    // `checks` has no draft test of its own: it needs `changes`, and a skipped need skips it too.
-    if (name !== "checks") {
-      assert.match(
-        job.if ?? "",
-        /pull_request\.draft/,
-        `${name} must skip drafts`,
-      );
-    }
-  }
-  assert.deepEqual(Object.keys(ci.jobs), ["changes", "checks", "ci"]);
-  assert.equal(ci.jobs["checks"]?.needs, "changes");
+  assert.deepEqual(Object.keys(ci.jobs), ["ci"]);
+  const job = ci.jobs["ci"];
+  assert.equal(job?.["runs-on"], FORK_GUARD);
+  assert.match(job?.if ?? "", /pull_request\.draft/, "ci must skip drafts");
+  assert.equal(
+    workflow(".github/workflows/classify-changes.yml").jobs["classify"]?.[
+      "runs-on"
+    ],
+    FORK_GUARD,
+  );
 });
 
 test("the nightly workflow never runs for pull requests", () => {
@@ -628,12 +611,12 @@ test("the package ships the hooks bin and its files", () => {
 
 test("the reusable CI workflow checks out full history so origin/main exists for the check-command", () => {
   const ci =
-    /** @type {{ jobs: { checks: { steps: { uses?: string, with?: Record<string, unknown> }[] } } }} */ (
+    /** @type {{ jobs: { ci: { steps: { uses?: string, with?: Record<string, unknown> }[] } } }} */ (
       parse(
         readFileSync(join(REPO, ".github/workflows/reusable-ci.yml"), "utf8"),
       )
     );
-  const checkout = ci.jobs.checks.steps.find((step) =>
+  const checkout = ci.jobs.ci.steps.find((step) =>
     step.uses?.startsWith("actions/checkout@"),
   );
   assert.equal(checkout?.with?.["fetch-depth"], 0);
