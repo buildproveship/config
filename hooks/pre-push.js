@@ -81,14 +81,20 @@ export function prePush(root, refs) {
       return 1;
     }
   }
-  const dirty = capture(
+  const status = capture(
     "git",
     ["status", "--porcelain", "--untracked-files=no"],
     {
       cwd: root,
     },
-  ).stdout.trim();
-  if (dirty) {
+  );
+  if (status.status !== 0) {
+    console.error(
+      `pre-push: could not inspect the working tree: ${status.stderr}`,
+    );
+    return 1;
+  }
+  if (status.stdout.trim()) {
     console.error(
       "pre-push: tracked files have uncommitted changes, so the tests would not match the commit being pushed. Commit or stash them.",
     );
@@ -96,13 +102,16 @@ export function prePush(root, refs) {
   }
 
   // -z keeps file names exact (no quoting of non-ASCII names); --no-renames lists both ends of a move.
-  const changed = capture(
+  const diff = capture(
     "git",
     ["diff", "--name-only", "--no-renames", "-z", "origin/main", head],
     { cwd: root },
-  )
-    .stdout.split("\0")
-    .filter(Boolean);
+  );
+  if (diff.status !== 0) {
+    console.error(`pre-push: could not inspect changed files: ${diff.stderr}`);
+    return 1;
+  }
+  const changed = diff.stdout.split("\0").filter(Boolean);
   if (changed.length === 0 || isDocsOnly(changed)) {
     reportTime("pre-push", startedAt, BUDGET_SECONDS);
     return 0;
