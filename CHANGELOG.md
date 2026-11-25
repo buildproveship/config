@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `reusable-ci.yml` and `reusable-nightly.yml`: the `runner` input defaults to GitHub-hosted `ubuntu-24.04` instead of the self-hosted `rr-local` (owner decision, 25 Nov 2026, BPS-105). frontend-ui stays on `rr-local` (`selfHosted: true` in `rollout-repos.json`, so the rollout renders `runner: rr-local` for it). Consumers that relied on the old default move to hosted runners when they bump their pin.
+- The rollout's AGENTS.md note and PR body name the runner each repo uses. The runner-migration review now flags a hosted job only in a self-hosted repo.
+- Skill rule 7, the checks reference and the rollout's AGENTS.md note: agents may merge their own PR once `ci` is green (owner decision, 25 Nov 2026).
 - `buildproveship-code-quality` skill (rule 7 and the checks reference): the buildproveship org is on GitHub Team, so org rulesets now require `ci` on an up-to-date branch in buildproveship, frontend-ui, test-management and test-data-management, with auto-merge on. Removed the text saying those repos are on the free plan and that a local Claude Code hook blocks `gh pr merge`. Consumers pick it up with `npx releaseready-guardrails sync` after the next release.
 
 ## 5.1.0 (2026-11-23)

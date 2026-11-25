@@ -247,10 +247,6 @@ test("rollout CLI refuses custom checks, setup, permissions and runners before a
       ),
     },
     { ".github/workflows/pr.yml": "jobs: [invalid" },
-    {
-      ".github/workflows/weekly.yml":
-        "jobs:\n  platform:\n    runs-on: ubuntu-24.04\n",
-    },
   ];
   for (const changes of cases) {
     const result = cli(t, ["--apply", "--repo", "test-management"], "custom", {

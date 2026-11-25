@@ -35,8 +35,8 @@ export function updateManagedWorkflow(before, expected, sha) {
   }
 }
 
-/** @param {string} text @param {boolean} privateRepo */
-export function additionalWorkflowReview(text, privateRepo) {
+/** @param {string} text @param {boolean} selfHosted the repo runs on rr-local, so a hosted job is a runner migration */
+export function additionalWorkflowReview(text, selfHosted) {
   try {
     const workflow = parse(text);
     const events =
@@ -53,7 +53,7 @@ export function additionalWorkflowReview(text, privateRepo) {
       return "additional pull-request checks";
     for (const job of Object.values(workflow?.jobs ?? {}))
       if (
-        privateRepo &&
+        selfHosted &&
         typeof job["runs-on"] === "string" &&
         job["runs-on"].startsWith("ubuntu-")
       )

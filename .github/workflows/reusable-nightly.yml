@@ -1,12 +1,13 @@
-# Nightly full E2E on the self-hosted runner, called from a repo's schedule workflow (templates/workflows/nightly.yml).
-# Never runs for pull requests, so the self-hosted runner never executes code from a fork.
+# Nightly full E2E, called from a repo's schedule workflow (templates/workflows/nightly.yml). Runs on GitHub-hosted
+# ubuntu-24.04 unless the caller passes `runner: rr-local`. Never runs for pull requests, so a self-hosted runner
+# never executes code from a fork.
 name: Reusable nightly E2E
 on:
   workflow_call:
     inputs:
       runner:
         type: string
-        default: rr-local
+        default: ubuntu-24.04
       node-version-file:
         type: string
         default: .nvmrc

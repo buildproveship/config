@@ -5,7 +5,8 @@ Every repo runs them in `pr.yml`. Merge only when `pr.yml` is green. GitHub enfo
 on GitHub Team, and org rulesets on buildproveship, frontend-ui, test-management and test-data-management require the
 `ci` check (`ci / ci` where it comes from the reusable workflow) on a branch up to date with `main`, with no bypass and
 no force pushes. config and universal-appium-framework do the same with branch protection (required check `ci`, admins
-included). Where a ruleset applies, auto-merge is on: it merges once `ci` passes.
+included). Where a ruleset applies, auto-merge is on: it merges once `ci` passes. Agents may merge their own PR once `ci` is
+green (owner decision, 25 Nov 2026).
 
 ## Commands
 

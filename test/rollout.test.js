@@ -21,6 +21,7 @@ import {
   renderCopilotSetup,
   renderPr,
 } from "../scripts/rollout.js";
+import { additionalWorkflowReview } from "../scripts/managed-workflow.js";
 
 const fixtureRoot = mkdtempSync(join(tmpdir(), "config-rollout-"));
 after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
@@ -111,13 +112,29 @@ test("other workflows retain their runner choices", () => {
     );
 });
 
-test("the caller pr.yml is the template; only a public repo passes the hosted runner", () => {
-  const privatePr = renderPr({ name: "x", private: true }, SHA);
-  const publicPr = renderPr({ name: "x", private: false }, SHA);
-  assert.match(privatePr, new RegExp(`reusable-ci.yml@${SHA}`));
-  assert.doesNotMatch(privatePr, /runner:/);
-  assert.match(publicPr, /with:\n {6}runner: ubuntu-24.04\n$/);
-  assert.doesNotMatch(privatePr + publicPr, /<sha>|Copy to/);
+test("the caller pr.yml is the template; only a self-hosted repo passes a runner", () => {
+  const hostedPr = renderPr({ name: "x", private: true }, SHA);
+  const selfHostedPr = renderPr(
+    { name: "x", private: true, selfHosted: true },
+    SHA,
+  );
+  assert.match(hostedPr, new RegExp(`reusable-ci.yml@${SHA}`));
+  assert.doesNotMatch(hostedPr, /runner:/);
+  assert.match(selfHostedPr, /with:\n {6}runner: rr-local\n$/);
+  assert.doesNotMatch(hostedPr + selfHostedPr, /<sha>|Copy to/);
+});
+
+test("a hosted job in a self-hosted repo is flagged as a runner migration; hosted repos are not", () => {
+  const hostedJob = "jobs:\n  a:\n    runs-on: ubuntu-24.04\n";
+  assert.equal(additionalWorkflowReview(hostedJob, true), "runner migration");
+  assert.equal(additionalWorkflowReview(hostedJob, false), null);
+});
+
+test("only frontend-ui stays on the self-hosted runner (BPS-105)", () => {
+  assert.deepEqual(
+    repos.filter((repo) => repo.selfHosted).map((repo) => repo.name),
+    ["frontend-ui"],
+  );
 });
 
 test("a repo with its own check command passes it as the workflow input", () => {
@@ -182,10 +199,10 @@ test("the AGENTS.md note is added once and names ignore-scripts when the repo's 
 
 test("the PR body names the runner decision for the repo", () => {
   assert.match(
-    prBody({ name: "x", private: false }, []),
-    /Justified exception/,
+    prBody({ name: "x", private: true, selfHosted: true }, []),
+    /Justified exception.*rr-local/,
   );
-  assert.match(prBody({ name: "x", private: true }, []), /rr-local/);
+  assert.match(prBody({ name: "x", private: true }, []), /ubuntu-24.04/);
 });
 
 test("a repo's extra scripts are added without replacing one it already has", () => {
