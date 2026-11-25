@@ -25,6 +25,35 @@ counts are valid impact evidence, not permission to release or adopt the change.
 Reviewers must verify that the base is the intended prior release, the inventory includes every current
 consumer, measurements use the stated Config candidate and consumer commits, all new rules are listed,
 and linked logs substantiate the counts. The command cannot establish those facts from assertions in
-JSON. It does not run consumers, fetch logs, publish, create tags, or change CI. It is a local evidence
-check, not an automatic release gate. Recollect evidence if the candidate changes; never backfill
+JSON. It does not run consumers, fetch logs, publish, create tags, or change CI. The standalone command is a local evidence
+check; the required release gate described below reuses it for stricter releases. Recollect evidence if the candidate changes; never backfill
 missing historical measurements with guessed counts. Consumer fixes and adoption remain separate work.
+
+## Required future release declaration
+
+The release workflow runs `npm run release:check` before its existing checks and publish step.
+Every future release using this workflow must commit a root `release-plan.json` with `version`,
+`baseCommit`, `classification` and `rationale`. Missing declarations, unknown classifications and
+version mismatches fail closed. The base is the prior release commit; reviewers verify that selection.
+
+Use `classification: "stricter-rules"` for new error-level rules or changes that make existing rules
+reject previously accepted code, such as tighter thresholds. Include `evidence` containing the same
+measurement object described above. All affected rule IDs go in `newRules`, including tightened rules.
+This classification requires a major bump and complete consumer counts. No counts are invented or
+inferred from a version number, changed filename, or empty result.
+
+Use `classification: "routine"` only when the release introduces no such enforcement increase, and
+explain that assessment in `rationale`. Routine releases do not require consumer measurements.
+Classification is a visible release-PR decision: reviewers compare the entire diff since `baseCommit`
+with the rationale. The checker validates the declaration, not the semantics of arbitrary rule code;
+a false routine declaration cannot be detected reliably by this command.
+
+For stricter releases, first commit the final proposed release content and measure that commit. Then
+commit only `release-plan.json`, embedding the evidence whose `candidateCommit` identifies the measured
+commit. The gate rejects any other committed content change after measurement, including package version,
+inventory, source and documentation changes. This avoids a self-referencing evidence commit while keeping
+the measured release content exact. Run `npm run release:check` on the final committed tree before merge.
+A later code change requires new measurements. The command reads committed files, not dirty worktree edits.
+
+The gate applies only when the updated workflow executes. It does not prevent tag creation, replace
+branch/tag protections, authorize publication, or retroactively validate old releases.

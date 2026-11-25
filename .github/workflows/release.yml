@@ -39,7 +39,7 @@ jobs:
       # test/hooks.test.js runs the real pre-commit hook, which needs gitleaks.
       - uses: ./.github/actions/install-gitleaks
       - name: Checks
-        run: npm run check
+        run: npm run release:check && npm run check
       - name: Publish
         run: npm publish
         env:
