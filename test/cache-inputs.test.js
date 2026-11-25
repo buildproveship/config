@@ -13,7 +13,7 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { parse } from "yaml";
 
-/** @type {{ on: { workflow_call: { inputs: Record<string, { default: string }> } }, jobs: { checks: { steps: { name?: string, if?: string, with: { key: string } }[] } } }} */
+/** @type {{ on: { workflow_call: { inputs: Record<string, { default: string }> } }, jobs: { ci: { steps: { name?: string, if?: string, with: { key: string } }[] } } }} */
 const workflow = parse(
   readFileSync(
     new URL("../.github/workflows/reusable-ci.yml", import.meta.url),
@@ -21,7 +21,7 @@ const workflow = parse(
   ),
 );
 const inputs = workflow.on.workflow_call.inputs;
-const cache = workflow.jobs.checks.steps.find(
+const cache = workflow.jobs.ci.steps.find(
   (step) => step.name === "Restore build output",
 );
 
@@ -92,8 +92,11 @@ test("opt-in build cache invalidates source, config and dependency inputs", (t) 
   writeFileSync(join(root, "assets/logo.svg"), "new asset\n");
   assert.notEqual(fingerprint(custom), before);
   assert.equal(inputs["cache-paths"].default, "");
-  assert.equal(cache.if, "${{ inputs.cache-paths != '' }}");
+  assert.equal(
+    cache.if,
+    "${{ steps.diff.outputs.docs_only != 'true' && inputs.cache-paths != '' }}",
+  );
   assert.ok(cache.with.key.includes("runner.arch"));
   assert.ok(cache.with.key.includes("steps.node.outputs.node-version"));
-  assert.deepEqual(Object.keys(workflow.jobs), ["changes", "checks", "ci"]);
+  assert.deepEqual(Object.keys(workflow.jobs), ["ci"]);
 });

@@ -3,7 +3,7 @@
 // removed. Used by `npm run check:workflow-cost` and by consumers through `releaseready-hooks`-style scripts.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 import { parse } from "yaml";
 
 /** Hosted runner labels billed at a multiplier or on larger machines. */
@@ -69,8 +69,9 @@ export function checkDirectory(dir) {
     .flatMap((f) => findCostProblems(f, readFileSync(join(dir, f), "utf8")));
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const problems = checkDirectory(process.argv[2] ?? ".github/workflows");
+if (import.meta.main) {
+  const { positionals } = parseArgs({ allowPositionals: true });
+  const problems = checkDirectory(positionals[0] ?? ".github/workflows");
   for (const p of problems) console.error(p);
   process.exit(problems.length === 0 ? 0 : 1);
 }

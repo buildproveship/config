@@ -5,7 +5,7 @@
 Node or npm. Callers receive the string output `docs_only`. Only the exact value `true` permits the existing
 docs-only skip. Classification or API failures fail the job and never produce a true result.
 
-The shared Node CI calls this workflow at the same commit through a relative workflow reference. Its runner
+The shared Node CI (`reusable-ci.yml`) no longer calls this workflow: it runs the identical script as the first step of its single `ci` job, which saves two billed hosted minutes per run (RRDPLAT-114), and a test fails if the two scripts differ. Its runner
 input, fork guard, draft behavior, skip pattern and required `ci` status remain unchanged. The `ci` log reports
 that checks were not run when the docs-only policy applies. This does not broaden or narrow which docs changes
 are exempt from checks; reconsidering that coverage policy is separate work.

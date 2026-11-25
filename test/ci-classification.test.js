@@ -96,43 +96,45 @@ test("actual shared classifier distinguishes docs, code, renames and empty/non-P
   }
 });
 
-test("required ci keeps failure behavior and reports docs-only checks as not run", () => {
-  const run = ci.jobs.ci.steps[0].run;
-  for (const results of [
-    "failure skipped",
-    "success failure",
-    "success cancelled",
-  ]) {
-    assert.notEqual(
-      spawnSync("bash", ["-c", run], {
-        env: { ...process.env, RESULTS: results, DOCS_ONLY: "false" },
-      }).status,
-      0,
-    );
-  }
-  const skipped = spawnSync("bash", ["-c", run], {
-    encoding: "utf8",
-    env: { ...process.env, RESULTS: "success skipped", DOCS_ONLY: "true" },
-  });
-  assert.equal(skipped.status, 0, skipped.stderr);
-  assert.match(skipped.stdout, /checks were not run/);
-  assert.equal(
-    spawnSync("bash", ["-c", run], {
-      env: { ...process.env, RESULTS: "success success", DOCS_ONLY: "false" },
-    }).status,
-    0,
+test("the single ci job runs the same classifier script as the shared classify workflow", () => {
+  const step = ci.jobs.ci.steps.find(
+    (/** @type {{id?: string}} */ candidate) => candidate.id === "diff",
   );
+  assert.equal(step.run, classifier.jobs.classify.steps[0].run);
+  assert.deepEqual(step.env, classifier.jobs.classify.steps[0].env);
 });
 
-test("classification is toolchain-independent and wired to the same-commit shared workflow", () => {
-  assert.equal(
-    ci.jobs.changes.uses,
-    "$/.github/workflows/classify-changes.yml",
+test("ci is one job: classification first, then every check step is skipped for docs-only changes", () => {
+  assert.deepEqual(Object.keys(ci.jobs), ["ci"]);
+  const steps = ci.jobs.ci.steps;
+  assert.equal(steps[0].id, "diff");
+  const notDocs = "${{ steps.diff.outputs.docs_only != 'true' }}";
+  for (const name of [
+    "checkout",
+    "setup-node",
+    "Install dependencies",
+    "Required check",
+  ]) {
+    const step = steps.find(
+      (/** @type {{uses?: string, name?: string}} */ candidate) =>
+        candidate.uses?.includes(name) || candidate.name === name,
+    );
+    assert.equal(step.if, notDocs, `${name} must be skipped for docs-only`);
+  }
+  const report = steps.find(
+    (/** @type {{name?: string}} */ candidate) =>
+      candidate.name === "Docs-only policy",
   );
-  assert.equal(
-    ci.jobs.changes.with["docs-only-pattern"],
-    "${{ inputs.docs-only-pattern }}",
-  );
+  assert.match(report.run, /checks were not run/);
+  assert.equal(report.if, "${{ steps.diff.outputs.docs_only == 'true' }}");
+  assert.deepEqual(ci.jobs.ci.permissions, {
+    contents: "read",
+    packages: "read",
+    "pull-requests": "read",
+  });
+});
+
+test("the classifier workflow stays toolchain-independent for other consumers", () => {
   assert.equal(
     classifier.on.workflow_call.outputs.docs_only.value,
     "${{ jobs.classify.outputs.docs_only }}",
@@ -149,9 +151,4 @@ test("classification is toolchain-independent and wired to the same-commit share
     classifier.jobs.classify.steps[0].run,
     /npm|checkout|uv sync/,
   );
-  assert.equal(
-    ci.jobs.checks.if,
-    "${{ needs.changes.outputs.docs_only != 'true' }}",
-  );
-  assert.deepEqual(ci.jobs.ci.needs, ["changes", "checks"]);
 });
