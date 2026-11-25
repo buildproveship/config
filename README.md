@@ -141,10 +141,11 @@ the full commit sha of a release tag:
   The copied workflow includes an immutable installer reference; the rollout renderer substitutes the already-selected Config release SHA.
   Both paths install the scanner once. The agent rules tell it to run `npx releaseready-hooks verify` before it opens a pull request.
 
-The `runner` input defaults to the self-hosted `rr-local` runner, which costs no Actions minutes. **Pull requests from
-forks always run on `ubuntu-24.04`**: this repo and its consumers can be public, and the self-hosted runner must never
-execute a stranger's code. The nightly workflow never runs for pull requests. Pass `runner: ubuntu-24.04` to run
-everything hosted.
+The `runner` input defaults to GitHub-hosted `ubuntu-24.04`. A repo whose checks would use too many Actions minutes
+passes `runner: rr-local` to run on the owner's self-hosted runner; today only frontend-ui does (`selfHosted` in
+`scripts/rollout-repos.json`). **Pull requests from forks always run on `ubuntu-24.04`**: this repo and its consumers
+can be public, and the self-hosted runner must never execute a stranger's code. The nightly workflow never runs for pull
+requests.
 
 ## Guardrails and the code-quality skill
 
@@ -181,7 +182,7 @@ fixed only), semgrep (`p/default`) and zizmor on every PR. It runs on Linux x64 
 
 ```yaml
 security:
-  runs-on: ubuntu-24.04 # private repos: [self-hosted, rr-local]
+  runs-on: ubuntu-24.04 # a self-hosted repo: [self-hosted, rr-local]
   timeout-minutes: 15
   steps:
     - uses: actions/checkout@<sha> # same pin as the other jobs

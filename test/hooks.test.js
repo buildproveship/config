@@ -478,7 +478,7 @@ test("the reusable CI workflow keeps fork PRs off the self-hosted runner and ski
     /** @type {{ workflow_call: { inputs: Record<string, { default: string }> } }} */ (
       ci.on
     ).workflow_call.inputs;
-  assert.equal(inputs["runner"]?.default, "rr-local");
+  assert.equal(inputs["runner"]?.default, "ubuntu-24.04");
   assert.equal(inputs["docs-only-pattern"]?.default, DOCS_ONLY_PATTERN);
   for (const [name, job] of Object.entries(ci.jobs)) {
     if (name === "changes") {

@@ -5,8 +5,9 @@
 #   - drafts are skipped; the caller also triggers on ready_for_review, so marking ready starts the run
 #   - docs-only PRs skip checks; `ci` reports success under that policy and logs that checks were not run
 #   - one run per PR (cancel-in-progress), dependencies and build output cached
-#   - the default runner is the self-hosted `rr-local` (RRDPLAT-104). Fork PRs never get it: a public repo would
-#     otherwise run a stranger's code on the owner's Mac, so they run on a GitHub-hosted runner instead.
+#   - the default runner is GitHub-hosted `ubuntu-24.04` (owner decision, 25 Nov 2026, BPS-105). A repo opts into the
+#     self-hosted `rr-local` with `runner: rr-local` (frontend-ui only). Fork PRs never get it: a public repo would
+#     otherwise run a stranger's code on the owner's Mac, so they always run on a GitHub-hosted runner.
 # Callers grant: permissions: { contents: read, pull-requests: read, packages: read } (packages: npm ci installs
 # @buildproveship/config from GitHub Packages, which needs a token even for a public package).
 name: Reusable CI
@@ -16,7 +17,7 @@ on:
       runner:
         description: Runner label for same-repo PRs and main. Fork PRs always use ubuntu-24.04.
         type: string
-        default: rr-local
+        default: ubuntu-24.04
       node-version-file:
         type: string
         default: .nvmrc
