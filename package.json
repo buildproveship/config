@@ -77,7 +77,8 @@
     "check": "npm run format:check && npm run typecheck && npm run lint && npm test && npm run check:guardrails",
     "check:guardrails": "node guardrails/cli.js",
     "prepare": "node hooks/cli.js install",
-    "check:full": "npm run check && npm run renovate:check"
+    "check:full": "npm run check && npm run renovate:check",
+    "release:evidence": "node scripts/check-release-evidence.js"
   },
   "peerDependencies": {
     "eslint": "^10.0.0",
