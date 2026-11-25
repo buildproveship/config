@@ -1,6 +1,10 @@
 // Static rules of releaseready-guardrails. Each rule names the 18 Nov 2026 review findings it prevents; the skill
 // (skill/buildproveship-code-quality/SKILL.md) explains the fix. Every rule is a pure function of the repo's files.
-import { parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
+import {
+  parse as parseJsonc,
+  parseTree,
+  printParseErrorCode,
+} from "jsonc-parser";
 import { minimatch } from "minimatch";
 import { posix } from "node:path";
 
@@ -112,19 +116,26 @@ function isRecord(value) {
 }
 
 /**
- * Line number of the first line containing `needle`, for findings in JSON files.
+ * Locate a JSON property by its full path using the existing JSONC parser, not a text match against another key.
  *
  * @param {RepoFiles} repo
  * @param {string} path
- * @param {string} needle
+ * @param {string[]} trail
  */
-function lineOf(repo, path, needle) {
-  const index = repo
-    .read(path)
-    .split("\n")
-    .findIndex((line) => line.includes(needle));
-  return index + 1;
+function lineOf(repo, path, trail) {
+  const source = repo.read(path);
+  let node = parseTree(source, [], { allowTrailingComma: true });
+  // JSONC value parsing keeps the last duplicate key; locate that same property in its syntax tree.
+  for (const segment of trail) {
+    node = node?.children?.findLast(
+      (child) => child.children?.[0]?.value === segment,
+    )?.children?.[1];
+  }
+  const key = node?.parent?.children?.[0];
+  return key ? source.slice(0, key.offset).split("\n").length : 0;
 }
+
+const internalCaretSpec = /^\^\d+\.\d+\.\d+(?:-[\w.]+)?$/;
 
 const dependencyFields = [
   "dependencies",
@@ -172,13 +183,18 @@ function dependencySource(repo) {
     if (!isRecord(pkg)) continue;
     for (const field of dependencyFields) {
       for (const [trail, spec] of specs(pkg[field], [])) {
-        const name = trail.at(-1) ?? "";
+        const leaf = trail.at(-1) ?? "";
+        const name = leaf === "." ? (trail.at(-2) ?? "") : leaf;
         const where = `${field}.${trail.join(".")}`;
-        if (nonRegistrySpec.some((re) => re.test(spec))) {
+        if (
+          nonRegistrySpec.some((re) => re.test(spec)) ||
+          (!name.startsWith("@buildproveship/") &&
+            localDirectorySpec.test(spec))
+        ) {
           findings.push({
             rule: "dependency-source",
             path,
-            line: lineOf(repo, path, `"${name}"`),
+            line: lineOf(repo, path, [field, ...trail]),
             message: `${where} is "${spec}": depend on a published registry version (^x.y.z), not a git, SHA, tarball or file source`,
             text: `${name}: ${spec}`,
           });
@@ -186,12 +202,12 @@ function dependencySource(repo) {
           name.startsWith("@buildproveship/") &&
           field !== "overrides" &&
           !spec.startsWith("npm:") &&
-          !/^\^\d+\.\d+\.\d+(?:-[\w.]+)?$/.test(spec)
+          !internalCaretSpec.test(spec)
         ) {
           findings.push({
             rule: "dependency-source",
             path,
-            line: lineOf(repo, path, `"${name}"`),
+            line: lineOf(repo, path, [field, ...trail]),
             message: `${where} is "${spec}": internal packages are depended on as a caret range (^x.y.z)`,
             text: `${name}: ${spec}`,
           });
@@ -226,10 +242,9 @@ function dependencySource(repo) {
 const internalScope = "@buildproveship/";
 
 /** Local folder specs (`../x`, `./x`, `/x`, `~/x`) and specs that point into build output (`…/dist`, `…/build`). */
-const localOrBuildSpec = [
-  /^(?:\.{1,2}|~)?\//,
-  /(?:^|\/)(?:dist|build)(?:\/|$)/,
-];
+const localDirectorySpec =
+  /^(?:\.{1,2}(?:[\\/]|$)|~\/|\/|[a-z]:[\\/]|\\\\|[^:@\s]+[\\/])/i;
+const localOrBuildSpec = [localDirectorySpec, /(?:^|\/)(?:dist|build)(?:\/|$)/];
 
 /** Lockfile `resolved` hosts that serve release or source tarballs, not a package registry. */
 const tarballHosts =
@@ -242,9 +257,9 @@ const tarballHosts =
  * @param {string} spec
  */
 function aliasTarget(name, spec) {
-  const alias = /^npm:((?:@[^/@]+\/)?[^@]+)@(.+)$/.exec(spec);
+  const alias = /^npm:((?:@[^/@]+\/)?[^@]+)(?:@(.*))?$/.exec(spec);
   return alias
-    ? { name: alias[1] ?? name, spec: alias[2] ?? "" }
+    ? { name: alias[1] ?? name, spec: alias[2] || "*" }
     : { name, spec };
 }
 
@@ -297,15 +312,18 @@ function unpublishedInternalDependency(repo) {
         if (
           internalName.startsWith(internalScope) &&
           !reportedElsewhere &&
-          [...nonRegistrySpec, ...localOrBuildSpec].some((re) =>
+          ([...nonRegistrySpec, ...localOrBuildSpec].some((re) =>
             re.test(target.spec),
-          )
+          ) ||
+            (field !== "overrides" &&
+              spec.startsWith("npm:") &&
+              !internalCaretSpec.test(target.spec)))
         ) {
           findings.push({
             rule: "unpublished-internal-dependency",
             path,
-            line: lineOf(repo, path, `"${key}"`),
-            message: `${field}.${trail.join(".")} is "${spec}": install ${internalName} from the registry as ^x.y.z, not from git, a tarball, or a local or build-output folder`,
+            line: lineOf(repo, path, [field, ...trail]),
+            message: `${field}.${trail.join(".")} is "${spec}": install ${internalName} from the registry as ^x.y.z, not an unversioned alias, non-caret range, git, tarball, or local or build-output folder`,
             text: `${key}: ${spec}`,
           });
         }
@@ -332,7 +350,7 @@ function unpublishedInternalDependency(repo) {
         findings.push({
           rule: "unpublished-internal-dependency",
           path,
-          line: lineOf(repo, path, `"${key}"`),
+          line: lineOf(repo, path, ["packages", key]),
           message: `${key} resolves to "${resolved}": install it from the registry, not a ${entry.link === true ? "linked local folder" : "release tarball or local file"}`,
           text: `${key}: ${resolved}`,
         });
@@ -379,7 +397,7 @@ function tsconfig(repo) {
             findings.push({
               rule: "tsconfig-private-path",
               path,
-              line: lineOf(repo, path, `"${alias}"`),
+              line: lineOf(repo, path, ["compilerOptions", "paths", alias]),
               message: `paths "${alias}" → "${target}": import the package's published export instead of aliasing into dist/ or node_modules`,
               text: `${alias}: ${target}`,
             });
@@ -392,7 +410,7 @@ function tsconfig(repo) {
         findings.push({
           rule: "tsconfig-not-strict",
           path,
-          line: lineOf(repo, path, `"${option}"`),
+          line: lineOf(repo, path, ["compilerOptions", option]),
           message: `${option} is false: fix the type errors instead of turning strictness off`,
           text: option,
         });
@@ -429,7 +447,7 @@ function buildInDependency(repo) {
         findings.push({
           rule: "build-in-node-modules",
           path,
-          line: lineOf(repo, path, `"${name}"`),
+          line: lineOf(repo, path, ["scripts", name]),
           message: `script "${name}" builds inside node_modules: consume the dependency's published build`,
           text: `${name}: ${script}`,
         });
