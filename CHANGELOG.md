@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `buildproveship-code-quality` skill (rule 7 and the checks reference): the buildproveship org is on GitHub Team, so org rulesets now require `ci` on an up-to-date branch in buildproveship, frontend-ui, test-management and test-data-management, with auto-merge on. Removed the text saying those repos are on the free plan and that a local Claude Code hook blocks `gh pr merge`. Consumers pick it up with `npx releaseready-guardrails sync` after the next release.
+
 ## 5.1.0 (2026-11-23)
 
 BuildProveShip rebrand of docs, metadata and the shared skill (BPS-92).

@@ -59,9 +59,9 @@ repo's `pr.yml`; the rest is on you.
    no secrets in code or logs, dependencies current and audited. _(TDM-01, UPF-11, UPF-21, RPT-09, OBS-02, OBS-03,
    OBS-09, RR-20, TM-24, FUI-08, UPF-19, UPF-22, UAF-15, UAF-18, UA2-16, UA2-17, OBS-16)_
 7. **Keep it maintainable and checked on every PR.** One check command runs everything light; `pr.yml` runs it on
-   every pull request. **Merge only when `pr.yml` is green** (squash). On config and universal-appium-framework
-   GitHub branch protection enforces it; the other repos are private on the free plan, where a local Claude Code
-   hook blocks `gh pr merge` until every check on the PR is green. Never bypass either. Build output is cleaned before tests run. Delete unused
+   every pull request. **Merge only when `pr.yml` is green** (squash). GitHub enforces it: org rulesets on the
+   private repos and branch protection on config and universal-appium-framework require the `ci` check on a branch
+   that is up to date with `main`. Never bypass them. Build output is cleaned before tests run. Delete unused
    files, exports, dependencies and parameters (knip, vulture). Split files over ~1,000 lines. Every test file has
    the classification header its repo's AGENTS.md asks for. _(RR-01, RR-18, FUI-01, FUI-05, FUI-14, FUI-18, TM-02,
    TDM-02, TDM-03, TDM-17, TDM-18, TDM-24, RPT-02, RPT-03, RPT-06, RPT-19, RPT-20, UPF-04, UPF-05, UPF-12, UPF-20,
