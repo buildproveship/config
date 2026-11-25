@@ -4,6 +4,24 @@
   "description": "Repo settings for releaseready-guardrails. Every exception carries a reason a reviewer can check.",
   "type": "object",
   "additionalProperties": false,
+  "definitions": {
+    "reason": {
+      "type": "string",
+      "minLength": 20,
+      "pattern": "\\S[\\s\\S]{18,}\\S"
+    },
+    "specificReason": {
+      "type": "string",
+      "allOf": [
+        { "$ref": "#/definitions/reason" },
+        {
+          "not": {
+            "pattern": "^\\s*(TODO|[Tt]odo|TBD|[Pp]re-?existing|[Bb]aseline)\\b"
+          }
+        }
+      ]
+    }
+  },
   "properties": {
     "$schema": { "type": "string" },
     "allow": {
@@ -43,13 +61,7 @@
           "path": { "type": "string", "minLength": 1 },
           "match": { "type": "string", "minLength": 3 },
           "max": { "type": "integer", "minimum": 1 },
-          "reason": {
-            "type": "string",
-            "minLength": 20,
-            "not": {
-              "pattern": "^(TODO|[Tt]odo|TBD|[Pp]re-?existing|[Bb]aseline)\\b"
-            }
-          }
+          "reason": { "$ref": "#/definitions/specificReason" }
         }
       }
     },
@@ -58,7 +70,7 @@
       "additionalProperties": false,
       "properties": {
         "threshold": { "type": "number", "minimum": 0, "maximum": 100 },
-        "reason": { "type": "string", "minLength": 20 },
+        "reason": { "$ref": "#/definitions/reason" },
         "paths": {
           "type": "array",
           "items": { "type": "string" },
@@ -80,7 +92,7 @@
       "additionalProperties": false,
       "properties": {
         "maxLines": { "type": "integer", "minimum": 1 },
-        "reason": { "type": "string", "minLength": 20 },
+        "reason": { "$ref": "#/definitions/reason" },
         "generated": {
           "type": "array",
           "items": {
@@ -89,13 +101,7 @@
             "required": ["path", "reason"],
             "properties": {
               "path": { "type": "string", "minLength": 1 },
-              "reason": {
-                "type": "string",
-                "minLength": 20,
-                "not": {
-                  "pattern": "^(TODO|[Tt]odo|TBD|[Pp]re-?existing|[Bb]aseline)\\b"
-                }
-              }
+              "reason": { "$ref": "#/definitions/specificReason" }
             }
           }
         }
@@ -113,7 +119,7 @@
       "additionalProperties": false,
       "properties": {
         "enabled": { "type": "boolean" },
-        "reason": { "type": "string", "minLength": 20 },
+        "reason": { "$ref": "#/definitions/reason" },
         "args": { "type": "array", "items": { "type": "string" } }
       },
       "if": {
