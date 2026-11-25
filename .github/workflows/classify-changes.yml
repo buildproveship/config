@@ -1,0 +1,53 @@
+name: Classify changes
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: Same-repo runner; fork PRs always use hosted Ubuntu.
+        type: string
+        default: ubuntu-24.04
+      docs-only-pattern:
+        description: Extended regex defining the caller's existing docs-only skip policy.
+        type: string
+        default: '^(.*\.md|docs/.*|LICENSE)$'
+    outputs:
+      docs_only:
+        description: True only after successful classification of a nonempty docs-only PR diff.
+        value: ${{ jobs.classify.outputs.docs_only }}
+permissions:
+  pull-requests: read
+jobs:
+  classify:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner }}
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.diff.outputs.docs_only }}
+    steps:
+      - id: diff
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          PATTERN: ${{ inputs.docs-only-pattern }}
+        run: |
+          set -euo pipefail
+          # Leave a conservative output even if the API or classifier subsequently fails.
+          echo "docs_only=false" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT" != "pull_request" ]; then exit 0; fi
+          # Include both ends of renames: moving code into docs does not remove the need for checks.
+          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)')
+          if [ -z "$files" ]; then exit 0; fi
+          # Consume all input: grep -q could SIGPIPE printf on a long diff.
+          if printf '%s\n' "$files" | grep -Ev -- "$PATTERN" > /dev/null; then
+            exit 0
+          else
+            result=$?
+            if [ "$result" -ne 1 ]; then
+              echo "docs-only classifier failed (grep exit $result); refusing to skip checks" >&2
+              exit "$result"
+            fi
+          fi
+          echo "docs_only=true" >> "$GITHUB_OUTPUT"

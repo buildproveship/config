@@ -457,7 +457,7 @@ test("install points git at Husky and writes the three hooks; CI skips it", () =
 
 /**
  * @param {string} file
- * @returns {{ on: Record<string, unknown>; jobs: Record<string, { if?: string; "runs-on": string; needs?: string; steps?: { run?: string; id?: string }[] }>; concurrency?: { "cancel-in-progress": boolean } }}
+ * @returns {{ on: Record<string, unknown>; jobs: Record<string, { if?: string; "runs-on"?: string; with?: Record<string, string>; uses?: string; needs?: string; steps?: { run?: string; id?: string }[] }>; concurrency?: { "cancel-in-progress": boolean } }}
  */
 function workflow(file) {
   return parse(readFileSync(join(REPO, file), "utf8"));
@@ -481,7 +481,21 @@ test("the reusable CI workflow keeps fork PRs off the self-hosted runner and ski
   assert.equal(inputs["runner"]?.default, "rr-local");
   assert.equal(inputs["docs-only-pattern"]?.default, DOCS_ONLY_PATTERN);
   for (const [name, job] of Object.entries(ci.jobs)) {
-    assert.equal(job["runs-on"], FORK_GUARD, `${name} must use the fork guard`);
+    if (name === "changes") {
+      assert.equal(job.uses, "$/.github/workflows/classify-changes.yml");
+      assert.equal(job.with?.["runner"], "${{ inputs.runner }}");
+      assert.equal(
+        workflow(".github/workflows/classify-changes.yml").jobs["classify"]?.[
+          "runs-on"
+        ],
+        FORK_GUARD,
+      );
+    } else
+      assert.equal(
+        job["runs-on"],
+        FORK_GUARD,
+        `${name} must use the fork guard`,
+      );
     // `checks` has no draft test of its own: it needs `changes`, and a skipped need skips it too.
     if (name !== "checks") {
       assert.match(
@@ -521,8 +535,8 @@ test("the caller templates run on ready PRs and main, and the Copilot job has th
 });
 
 test("the docs-only step skips checks for docs-only PRs and nothing else", () => {
-  const ci = workflow(".github/workflows/reusable-ci.yml");
-  const step = ci.jobs["changes"]?.steps?.find(
+  const ci = workflow(".github/workflows/classify-changes.yml");
+  const step = ci.jobs["classify"]?.steps?.find(
     (candidate) => candidate.id === "diff",
   );
   assert.ok(step?.run);
@@ -555,7 +569,7 @@ test("the docs-only step skips checks for docs-only PRs and nothing else", () =>
       },
     });
     assert.equal(result.status, 0, result.stderr);
-    return readFileSync(output, "utf8").trim();
+    return readFileSync(output, "utf8").trim().split("\n").at(-1);
   };
   assert.equal(
     docsOnly("pull_request", "README.md\ndocs/a/b.png"),
