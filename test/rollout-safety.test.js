@@ -100,21 +100,24 @@ if(kind==='git' && a[0]==='-c'){
 if(kind==='gh' && a[0]==='api'){console.log(JSON.stringify({object:{type:'commit',sha:'a'.repeat(40)}}));}
 else if(kind==='gh' && a[0]==='pr' && a[1]==='list'){
  const s=process.env.ROLLOUT_TEST_SCENARIO;
+ if(s==='fresh' && ['RRDPLAT-105-shared-hooks-and-ci','RRDPLAT-103-delivery-rules'].includes(a[a.indexOf('--head')+1])){console.log(JSON.stringify(a[a.indexOf('--state')+1]==='open'?[]:[{state:'CLOSED',url:'https://example.invalid/pr/old'}]));process.exit(0);}
  if(s==='query-error')process.exit(19);
  console.log(JSON.stringify(s==='open'?[{state:'OPEN',url:'https://example.invalid/pr/1'}]:s==='closed'?[{state:'CLOSED',url:'https://example.invalid/pr/1'}]:[]));
+}else if(kind==='git' && a[0]==='check-ref-format'){
+ try{process.stdout.write(require('node:child_process').execFileSync(process.env.ROLLOUT_TEST_REAL_GIT,a,{encoding:'utf8'}));}catch(error){process.exit(error.status || 1);}
 }else if(kind==='git' && a[0]==='ls-remote'){
  if(process.env.ROLLOUT_TEST_SCENARIO==='orphan')console.log('a'.repeat(40)+' refs/heads/synthetic');
  }else if(kind==='git' && a[0]==='clone'){
  const dir=a.at(-1);fs.mkdirSync(dir,{recursive:true});
  for(const [p,text] of Object.entries(JSON.parse(process.env.ROLLOUT_TEST_FILES))){fs.mkdirSync(require('node:path').dirname(require('node:path').join(dir,p)),{recursive:true});fs.writeFileSync(require('node:path').join(dir,p),text);}
-}else if(process.env.ROLLOUT_TEST_SCENARIO==='managed' && (
+}else if(['managed','fresh'].includes(process.env.ROLLOUT_TEST_SCENARIO) && (
  (kind==='git' && ['checkout','add','commit','push'].includes(a[0])) ||
  (kind==='npm' && a.join(' ')==='install --ignore-scripts --no-audit --no-fund') ||
  (kind==='npx' && ['--no-install prettier --write package.json','--no-install releaseready-hooks install'].includes(a.join(' ')))
 ) ){}
-else if(process.env.ROLLOUT_TEST_SCENARIO==='managed' && kind==='sh' && a[0]==='-c' && a[1]===process.env.ROLLOUT_TEST_CHECK){}
-else if(process.env.ROLLOUT_TEST_SCENARIO==='managed' && kind==='gh' && a.join(' ')==='auth token'){console.log('synthetic-fixture-value');}
-else if(process.env.ROLLOUT_TEST_SCENARIO==='managed' && kind==='gh' && a[0]==='pr' && a[1]==='create'){console.log('https://example.invalid/pr/2');}
+else if(['managed','fresh'].includes(process.env.ROLLOUT_TEST_SCENARIO) && kind==='sh' && a[0]==='-c' && a[1]===process.env.ROLLOUT_TEST_CHECK){}
+else if(['managed','fresh'].includes(process.env.ROLLOUT_TEST_SCENARIO) && kind==='gh' && a.join(' ')==='auth token'){console.log('synthetic-fixture-value');}
+else if(['managed','fresh'].includes(process.env.ROLLOUT_TEST_SCENARIO) && kind==='gh' && a[0]==='pr' && a[1]==='create'){console.log('https://example.invalid/pr/2');}
 else{console.error('unexpected external command: '+kind+' '+a.join(' '));process.exit(91);}
 `,
     );
@@ -134,6 +137,9 @@ else{console.error('unexpected external command: '+kind+' '+a.join(' '));process
         TMPDIR: root,
         ROLLOUT_TEST_LOG: log,
         ROLLOUT_TEST_SCENARIO: scenario,
+        ROLLOUT_TEST_REAL_GIT: spawnSync("which", ["git"], {
+          encoding: "utf8",
+        }).stdout.trim(),
         ROLLOUT_TEST_FILES: JSON.stringify(files),
         ROLLOUT_TEST_CHECK:
           loadRepos().repos.find((repo) => repo.name === "test-management")
@@ -288,4 +294,82 @@ test("managed PR-only callers preserve triggers and can pass the real CLI planni
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, /example.invalid\/pr\/2/);
   assert.match(result.calls, /"npm","install"/);
+});
+
+test("an explicit fresh branch supports a later attempt without reusing a closed branch", (t) => {
+  const branch = "RRDPLAT-111-fixture-next-attempt";
+  for (const task of ["hooks", "delivery-rules"]) {
+    const args = ["--apply", "--task", task, "--repo", "test-management"];
+    const closed = cli(t, args, "fresh");
+    assert.notEqual(closed.status, 0);
+    assert.doesNotMatch(closed.calls, /"clone"|"push"|"create"/);
+    const result = cli(t, [...args, "--branch", branch], "fresh", {
+      "package.json": JSON.stringify({ scripts: { check: "true" } }),
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const calls = result.calls
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    assert.ok(
+      calls.some((args) => args.join(" ") === `git checkout -b ${branch}`),
+    );
+    assert.ok(
+      calls.some((args) => args.join(" ") === `git push -u origin ${branch}`),
+    );
+    assert.ok(
+      calls.some(
+        (args) =>
+          args[0] === "gh" &&
+          args[2] === "create" &&
+          args[args.indexOf("--head") + 1] === branch,
+      ),
+    );
+    assert.match(result.stdout, new RegExp(`Rollout branch: ${branch}`));
+  }
+});
+
+test("custom branches retain closed and orphan refusal and reject invalid names before remote calls", (t) => {
+  for (const scenario of ["closed", "orphan", "query-error"]) {
+    const result = cli(
+      t,
+      [
+        "--apply",
+        "--repo",
+        "test-management",
+        "--branch",
+        "RRDPLAT-111-existing",
+      ],
+      scenario,
+    );
+    assert.notEqual(result.status, 0);
+    assert.doesNotMatch(
+      result.calls,
+      /"clone"|"auth","token"|"push"|"install"|"create"/,
+    );
+  }
+  for (const branch of ["main", "bad branch", "@{-1}"]) {
+    const result = cli(
+      t,
+      ["--apply", "--repo", "test-management", "--branch", branch],
+      "none",
+    );
+    assert.notEqual(result.status, 0);
+    assert.doesNotMatch(result.calls, /"gh"|"clone"|"ls-remote"|"push"/);
+  }
+});
+
+test("a fresh branch request reuses active work on the default task branch", (t) => {
+  const result = cli(
+    t,
+    ["--apply", "--repo", "test-management", "--branch", "RRDPLAT-111-fresh"],
+    "open",
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /existing PR \(not updated\)/);
+  assert.match(
+    result.calls,
+    /"--head","RRDPLAT-105-shared-hooks-and-ci","--state","open"/,
+  );
+  assert.doesNotMatch(result.calls, /"clone"|"push"|"create"/);
 });
