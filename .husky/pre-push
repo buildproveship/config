@@ -1,1 +1,1 @@
-node hooks/cli.js pre-push "$@"
+node 'hooks/cli.js' pre-push "$@"

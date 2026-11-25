@@ -1,1 +1,1 @@
-node hooks/cli.js commit-msg "$@"
+node 'hooks/cli.js' commit-msg "$@"
