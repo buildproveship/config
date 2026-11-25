@@ -50,6 +50,15 @@ export function findCostProblems(file, text) {
     const runsOn = labels(job["runs-on"]);
     const selfHosted =
       runsOn.includes("self-hosted") || runsOn.includes("rr-local");
+    if (
+      events.includes("pull_request") &&
+      !selfHosted &&
+      !/\bdraft\b/.test(String(job.if ?? ""))
+    ) {
+      problems.push(
+        `${file}: job ${name} runs hosted on pull_request but does not skip drafts`,
+      );
+    }
     if (!selfHosted && runsOn.some((l) => COSTLY_RUNNER.test(l))) {
       problems.push(
         `${file}: job ${name} uses a costly hosted runner (${runsOn.join(", ")})`,

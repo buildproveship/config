@@ -17,6 +17,7 @@ const ok = `on:
     - cron: "0 18 * * 0"
 jobs:
   a:
+    if: \${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
 `;
@@ -39,6 +40,10 @@ test("each costly pattern is reported", () => {
       /branches or tags filter/,
     ],
     [ok.replace("0 18 * * 0", "30 18 * * *"), /more than weekly/],
+    [
+      ok.replace("    if: ${{ !github.event.pull_request.draft }}\n", ""),
+      /does not skip drafts/,
+    ],
   ];
   for (const [text, message] of cases) {
     assert.match(findCostProblems("bad.yml", text).join("\n"), message);
