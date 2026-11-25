@@ -45,8 +45,8 @@ export function capture(command, args, options = {}) {
   });
   return {
     status: result.error ? 1 : (result.status ?? 1),
-    stdout: result.stdout,
-    stderr: result.stderr.trim(),
+    stdout: result.stdout ?? "",
+    stderr: result.error?.message ?? (result.stderr ?? "").trim(),
   };
 }
 

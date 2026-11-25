@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: shared hooks and workflows using temporary repositories and controlled subprocess failures.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
@@ -15,10 +19,18 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { parse } from "yaml";
 import { DOCS_ONLY_PATTERN } from "../hooks/paths.js";
+import { capture } from "../hooks/run.js";
 
 const REPO = fileURLToPath(new URL("../", import.meta.url));
 const CLI = join(REPO, "hooks/cli.js");
 const ZERO = "0".repeat(40);
+
+test("capture reports a command that cannot start without throwing", () => {
+  const result = capture("rrdplat111-nonexistent-command", []);
+  assert.notEqual(result.status, 0);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /ENOENT/);
+});
 
 /** Environment for spawned git and hooks: no GIT_* (tests run inside the pre-push hook) and no CI. */
 function cleanEnv() {
@@ -340,6 +352,60 @@ test("pre-push only vouches for the checked-out commit", () => {
   const dirty = runHook(work, "pre-push", { input: pushLine(work, "second") });
   assert.notEqual(dirty.status, 0);
   assert.match(dirty.output, /uncommitted changes/);
+});
+
+test("pre-push fails when Git cannot inspect status or changed files", () => {
+  const { work } = makeScriptedRepo();
+  const input = branchWithChange(work, "inspection", () =>
+    write(work, "src/a.js", "export const a = 1;\n"),
+  );
+  const bin = join(work, "fake-bin");
+  mkdirSync(bin);
+  const realGit = spawnSync("which", ["git"], {
+    encoding: "utf8",
+  }).stdout.trim();
+  writeFileSync(
+    join(bin, "git"),
+    `#!/bin/sh
+if [ "$1" = "$FAIL_GIT_COMMAND" ]; then
+  echo "synthetic inspection failure" >&2
+  exit 2
+fi
+exec "$REAL_GIT" "$@"
+`,
+  );
+  chmodSync(join(bin, "git"), 0o755);
+  for (const command of ["status", "diff"]) {
+    const result = runHook(work, "pre-push", {
+      input,
+      env: {
+        ...cleanEnv(),
+        PATH: `${bin}:${process.env["PATH"]}`,
+        REAL_GIT: realGit,
+        FAIL_GIT_COMMAND: command,
+      },
+    });
+    assert.notEqual(result.status, 0, `${command}: ${result.output}`);
+    assert.match(result.output, /synthetic inspection failure/);
+    assert.doesNotMatch(result.output, /npm run/);
+  }
+});
+
+test("install fails without writing hooks when Git configuration is locked", () => {
+  const { work } = makeRepo();
+  write(work, ".git/config.lock", "synthetic concurrent config writer\n");
+  const result = runHook(work, "install");
+  assert.notEqual(result.status, 0, result.output);
+  assert.match(result.output, /husky:/);
+  assert.equal(existsSync(join(work, ".husky")), false);
+});
+
+test("the install CLI reports missing Git without a startup TypeError", () => {
+  const { work } = makeRepo();
+  const result = runHook(work, "install", { env: { ...cleanEnv(), PATH: "" } });
+  assert.notEqual(result.status, 0);
+  assert.match(result.output, /git command not found/);
+  assert.doesNotMatch(result.output, /TypeError/);
 });
 
 test("install points git at Husky and writes the three hooks; CI skips it", () => {
