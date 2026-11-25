@@ -112,28 +112,21 @@ test("other workflows retain their runner choices", () => {
     );
 });
 
-test("the caller pr.yml is the template; only a self-hosted repo passes a runner", () => {
-  const hostedPr = renderPr({ name: "x", private: true }, SHA);
-  const selfHostedPr = renderPr(
-    { name: "x", private: true, selfHosted: true },
-    SHA,
-  );
-  assert.match(hostedPr, new RegExp(`reusable-ci.yml@${SHA}`));
-  assert.doesNotMatch(hostedPr, /runner:/);
-  assert.match(selfHostedPr, /with:\n {6}runner: rr-local\n$/);
-  assert.doesNotMatch(hostedPr + selfHostedPr, /<sha>|Copy to/);
+test("the caller pr.yml is the template and passes no runner: rr-local is the reusable default", () => {
+  const pr = renderPr({ name: "x", private: true }, SHA);
+  assert.match(pr, new RegExp(`reusable-ci.yml@${SHA}`));
+  assert.doesNotMatch(pr, /runner:|<sha>|Copy to/);
 });
 
-test("a hosted job in a self-hosted repo is flagged as a runner migration; hosted repos are not", () => {
+test("a GitHub-hosted job in any repo is flagged as a runner migration", () => {
   const hostedJob = "jobs:\n  a:\n    runs-on: ubuntu-24.04\n";
-  assert.equal(additionalWorkflowReview(hostedJob, true), "runner migration");
-  assert.equal(additionalWorkflowReview(hostedJob, false), null);
+  assert.equal(additionalWorkflowReview(hostedJob), "runner migration");
 });
 
-test("only frontend-ui stays on the self-hosted runner (BPS-105)", () => {
+test("no repo carries a per-repo runner rule (RRDPLAT-114)", () => {
   assert.deepEqual(
-    repos.filter((repo) => repo.selfHosted).map((repo) => repo.name),
-    ["frontend-ui"],
+    repos.filter((repo) => "selfHosted" in repo),
+    [],
   );
 });
 
@@ -197,12 +190,8 @@ test("the AGENTS.md note is added once and names ignore-scripts when the repo's 
   assert.ok(!again.changes.some((change) => change.path === "AGENTS.md"));
 });
 
-test("the PR body names the runner decision for the repo", () => {
-  assert.match(
-    prBody({ name: "x", private: true, selfHosted: true }, []),
-    /Justified exception.*rr-local/,
-  );
-  assert.match(prBody({ name: "x", private: true }, []), /ubuntu-24.04/);
+test("the PR body names the rr-local default and the fork exception", () => {
+  assert.match(prBody([]), /self-hosted `rr-local`.*forks.*ubuntu-24.04/);
 });
 
 test("a repo's extra scripts are added without replacing one it already has", () => {

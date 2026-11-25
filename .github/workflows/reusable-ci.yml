@@ -18,7 +18,7 @@ on:
       runner:
         description: Runner label for same-repo PRs and main. Fork PRs always use ubuntu-24.04.
         type: string
-        default: ubuntu-24.04
+        default: rr-local
       node-version-file:
         type: string
         default: .nvmrc

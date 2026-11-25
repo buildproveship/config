@@ -7,7 +7,7 @@ on:
     inputs:
       runner:
         type: string
-        default: ubuntu-24.04
+        default: rr-local
       node-version-file:
         type: string
         default: .nvmrc

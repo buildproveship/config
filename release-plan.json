@@ -1,6 +1,6 @@
 {
-  "version": "6.1.0",
-  "baseCommit": "6ca0305d34ed57c68a5bcef84aaddc597759d543",
+  "version": "6.2.0",
+  "baseCommit": "e685c2f449ae0997d2fe6985394beae84925a0b0",
   "classification": "routine",
-  "rationale": "Adds a workflow cost checker (a new script, not an ESLint or guardrails rule), merges the reusable CI jobs into one and moves the nightly template to weekly. No existing guardrails or ESLint rule rejects code it accepted in 6.0.0, so no consumer measurements are needed."
+  "rationale": "Changes the default runner input to rr-local and adds the push-once rule and a draft-skip check in the workflow cost script (a script, not an ESLint or guardrails rule). No existing guardrails or ESLint rule rejects code it accepted in 6.1.0, so no consumer measurements are needed."
 }
