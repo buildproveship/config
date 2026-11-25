@@ -2,7 +2,7 @@
 
 `releaseready-guardrails` and the shared ESLint config ship in `@buildproveship/config` (one source for every repo).
 Every repo runs them in `pr.yml`. Merge only when `pr.yml` is green. config and universal-appium-framework enforce
-this with GitHub branch protection (required check `checks`, up to date with `main`, no force pushes, admins
+this with GitHub branch protection (required check `ci`, up to date with `main`, no force pushes, admins
 included). The other eight repos are private on GitHub's free plan, which has no branch protection, so there a local
 Claude Code hook on the owner's machine blocks `gh pr merge` until every check on the PR is green.
 
@@ -15,9 +15,10 @@ npx releaseready-guardrails sync       # write this skill and its .claude stub i
 npx releaseready-guardrails baseline   # print allow entries for today's findings (reasons left empty)
 ```
 
-Each repo wraps the first in `npm run check:guardrails` and runs it from its check command. observability (Python)
-runs it with `npx --yes --package @buildproveship/config@^2 releaseready-guardrails` next to ruff, `mypy --strict`,
-vulture and pip-audit.
+Each repo wraps the first in `npm run check:guardrails` and runs it from its check command. For Python repos,
+install the current published `@buildproveship/config` as a dev dependency using
+[the package README's registry setup](https://github.com/buildproveship/config#install), commit the resulting
+caret range and lockfile, and run `npx releaseready-guardrails` next to ruff, `mypy --strict`, vulture and pip-audit.
 
 ## Rules
 

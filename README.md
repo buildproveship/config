@@ -10,7 +10,10 @@ Add the scope to the repo's `.npmrc`:
 
 ```ini
 @buildproveship:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
+
+Keep the environment-variable reference literal in `.npmrc`; never put a token value in the file.
 
 Then install it with its peers. Locally you need a token with `read:packages` (for example `gh auth refresh -s read:packages`
 and `export NODE_AUTH_TOKEN=$(gh auth token)`); in GitHub Actions `actions/setup-node` with
