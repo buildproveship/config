@@ -1,5 +1,14 @@
 # Changelog
 
+## 6.1.0 (2026-11-25)
+
+Actions budget guardrails (RRDPLAT-114). The org's US$10/month Actions budget was spent on 25 Nov 2026.
+
+- `reusable-ci.yml` runs as one job, `ci`, instead of three (classify, checks, report). Every hosted job bills at least one minute, so each run bills about two fewer minutes. The required check is still `ci / ci`; a docs-only PR still reports success and logs that checks were not run. The classifier script is identical to `classify-changes.yml` (a test fails if they differ); that workflow stays for non-Node consumers. Callers must grant `pull-requests: read`, as before.
+- New `npm run check:workflow-cost` (`scripts/check-workflow-cost.js`, part of `npm run check`): fails on hosted macOS, Windows or larger runners, jobs without `timeout-minutes`, `push` triggers without a branch or tag filter, and schedules that run more than weekly. Consumers can run it against their own `.github/workflows`.
+- The nightly caller template runs weekly instead of daily. Consumers that copied it keep their own cron; run `check:workflow-cost` to find daily hosted schedules.
+- `docs/ci-budget-bypass.md`: the temporary `ci / ci` bypass runbook (local checks plus PR evidence) and how to switch it off at the billing reset.
+
 ## 6.0.0 (2026-11-25)
 
 Breaking: code duplication is capped at 1% in every repo (owner decision, 25 Nov 2026, RRDSCRUM-662).
