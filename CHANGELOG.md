@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 5.2.0 (2026-11-25)
+
+GitHub Team follow-up (BPS-105). This release also ships the RRDPLAT-111 fixes merged since 5.1.0 (#43 to #57), including the fail-closed docs-only classifier that `reusable-ci.yml` calls with the `$/` self-repository reference.
 
 - `reusable-ci.yml` and `reusable-nightly.yml`: the `runner` input defaults to GitHub-hosted `ubuntu-24.04` instead of the self-hosted `rr-local` (owner decision, 25 Nov 2026, BPS-105). frontend-ui stays on `rr-local` (`selfHosted: true` in `rollout-repos.json`, so the rollout renders `runner: rr-local` for it). Consumers that relied on the old default move to hosted runners when they bump their pin.
 - The rollout's AGENTS.md note and PR body name the runner each repo uses. The runner-migration review now flags a hosted job only in a self-hosted repo.
