@@ -78,7 +78,8 @@
     "check:guardrails": "node guardrails/cli.js",
     "prepare": "node hooks/cli.js install",
     "check:full": "npm run check && npm run renovate:check",
-    "release:evidence": "node scripts/check-release-evidence.js"
+    "release:evidence": "node scripts/check-release-evidence.js",
+    "release:check": "node scripts/check-release-policy.js"
   },
   "peerDependencies": {
     "eslint": "^10.0.0",
