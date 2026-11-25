@@ -24,9 +24,7 @@ test("release evidence checks real committed inputs through the npm entry point"
   mkdirSync(join(root, "scripts"));
   writeFileSync(
     join(root, "scripts/rollout-repos.json"),
-    JSON.stringify({
-      repos: [{ name: "alpha" }, { name: "python", skip: "no npm" }],
-    }),
+    '{"repos":[{"name":"alpha"},{"name":"python","skip":"no npm"}]}',
   );
   /** @param {string} version */
   const commit = (version) => {
