@@ -57,7 +57,11 @@
       "types": "./types/guardrails/index.d.ts",
       "default": "./guardrails/index.js"
     },
-    "./guardrails/config.schema.json": "./guardrails/config.schema.json"
+    "./guardrails/config.schema.json": "./guardrails/config.schema.json",
+    "./lint-staged": {
+      "types": "./types/hooks/lint-staged.config.d.ts",
+      "default": "./hooks/lint-staged.config.js"
+    }
   },
   "prettier": "./prettier.js",
   "scripts": {
