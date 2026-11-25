@@ -73,20 +73,15 @@ export function renderPr(repo, sha) {
 }
 
 /**
- * templates/copilot-setup-steps.yml plus the gitleaks step the commit hooks need, taken from the released config action.
+ * templates/copilot-setup-steps.yml with its shared scanner installer pinned to the chosen release.
  * @param {string} sha
  */
 export function renderCopilotSetup(sha) {
-  const action = `buildproveship/config/.github/actions/install-gitleaks@${sha}`;
   return (
     "# Runs before the Copilot coding agent starts, so it can run `npx releaseready-hooks verify` and its commit hooks.\n" +
     template("templates/copilot-setup-steps.yml")
       .replace(/^(#.*\n)+/, "")
-      // The pre-commit hook needs gitleaks, which a hosted runner does not have.
-      .replace(
-        "      - run: npm ci",
-        `      - uses: ${action}\n      - run: npm ci`,
-      )
+      .replace(/(install-gitleaks@)[a-f0-9]{40}/, `$1${sha}`)
   );
 }
 
