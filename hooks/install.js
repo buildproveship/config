@@ -61,6 +61,7 @@ export function install(root) {
   });
   if (active.status !== 0 || !active.stdout?.trim()) {
     console.error("install: cannot determine active hooks; nothing changed");
+    if (active.stderr) console.error(active.stderr);
     return 1;
   }
   const activePath = resolve(root, active.stdout.trim());
