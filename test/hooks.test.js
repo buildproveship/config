@@ -408,7 +408,8 @@ test("the install CLI reports missing Git without a startup TypeError", () => {
   const { work } = makeRepo();
   const result = runHook(work, "install", { env: { ...cleanEnv(), PATH: "" } });
   assert.notEqual(result.status, 0);
-  assert.match(result.output, /git command not found/);
+  assert.match(result.output, /git.*ENOENT/);
+  assert.equal(existsSync(join(work, ".husky")), false);
   assert.doesNotMatch(result.output, /TypeError/);
 });
 

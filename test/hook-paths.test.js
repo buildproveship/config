@@ -42,6 +42,7 @@ test("installed hooks run through Git with spaces and shell characters in packag
     spawnSync(command, args, { cwd: root, env, encoding: "utf8" });
   for (const args of [
     ["init", "-q"],
+    ["config", "core.hooksPath", ".git/hooks"], // isolate the synthetic consumer from machine-wide hooks
     ["config", "user.name", "Synthetic"],
     ["config", "user.email", "test@example.com"],
     ["config", "commit.gpgsign", "false"],

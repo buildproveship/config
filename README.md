@@ -99,7 +99,7 @@ npm pkg set scripts.prepare="releaseready-hooks install"
 npm install # runs prepare; commit the generated .husky/ files
 ```
 
-`gitleaks` must be on the PATH (`brew install gitleaks`; in CI use [`install-gitleaks`](.github/actions/install-gitleaks)). `install` does nothing when `CI` or `HUSKY=0` is set.
+`gitleaks` must be on the PATH (`brew install gitleaks`; in CI use [`install-gitleaks`](.github/actions/install-gitleaks)). `install` does nothing when `CI` or `HUSKY=0` is set. It refuses custom hooks or conflicting Husky files before changing Git configuration or hook contents. Integrate consumer hook behavior deliberately before adopting the shared hooks; fresh installs and recognized generated wrappers can be refreshed.
 
 | Hook         | Runs                                                                                                                                                                             | Budget  |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
