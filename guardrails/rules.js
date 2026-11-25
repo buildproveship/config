@@ -899,7 +899,7 @@ function trackedBuildOutput(repo) {
 /** Lines one source file may have when the repo sets no limit; a higher repo limit needs a reason. */
 const defaultMaxLines = 1000;
 
-/** Generated sources the line limit never counts; a repo adds its own in `fileLength.generated`, each with a reason. */
+/** Generated sources the line limit and jscpd never count; a repo adds its own in `fileLength.generated`, each with a reason. */
 const defaultGeneratedGlobs = [
   "**/generated/**",
   "**/__generated__/**",
@@ -925,16 +925,25 @@ function countSourceLines(path, text) {
 }
 
 /**
+ * Globs of generated sources: the built-in ones plus the repo's `fileLength.generated` entries.
+ *
+ * @param {{ fileLength?: { generated?: { path: string }[] } }} config
+ */
+export function generatedGlobs(config) {
+  return [
+    ...defaultGeneratedGlobs,
+    ...(config.fileLength?.generated ?? []).map((entry) => entry.path),
+  ];
+}
+
+/**
  * Nov 2026 review: files over ~1,000 lines mix responsibilities and defeat review. Generated files do not count.
  *
  * @type {Rule}
  */
 function oversizedSourceFile(repo, config) {
   const maxLines = config.fileLength?.maxLines ?? defaultMaxLines;
-  const generated = [
-    ...defaultGeneratedGlobs,
-    ...(config.fileLength?.generated ?? []).map((entry) => entry.path),
-  ];
+  const generated = generatedGlobs(config);
   /** @type {Finding[]} */
   const findings = [];
   for (const path of repo.paths.filter(
