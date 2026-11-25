@@ -13,6 +13,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { inc } from "semver";
 import {
   planRepo,
   renderPr,
@@ -29,10 +30,10 @@ function workspace(t) {
 
 test("planner refuses newer or unsupported dependency ranges without proposing any edits", (t) => {
   const root = workspace(t);
+  /** @type {import("semver").ReleaseType[]} */
+  const levels = ["major", "minor", "patch"];
   for (const range of [
-    "^5.1.0",
-    "^4.3.0",
-    "^4.2.1",
+    ...levels.map((level) => `^${inc(loadRepos().release.slice(1), level)}`),
     "^invalid",
     "^4.0.0 || ^5.1.0",
     "file:../config",
