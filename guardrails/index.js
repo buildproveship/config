@@ -7,13 +7,13 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { Ajv } from "ajv";
-import { alwaysExcluded, matches, rules } from "./rules.js";
+import { alwaysExcluded, generatedGlobs, matches, rules } from "./rules.js";
 import { skillDrift } from "./skill.js";
 
 const require = createRequire(import.meta.url);
 const configFile = "releaseready-guardrails.json";
-/** Duplication allowed when a repo sets no threshold; a higher repo threshold needs a reason. */
-export const defaultJscpdThreshold = 3;
+/** The most duplication any repo may have (owner decision, 25 Nov 2026, RRDSCRUM-662); a repo may set a lower threshold. */
+export const maxJscpdThreshold = 1;
 const jscpdFormats = "javascript,typescript,jsx,tsx,python";
 
 /**
@@ -28,7 +28,7 @@ const jscpdFormats = "javascript,typescript,jsx,tsx,python";
 /**
  * @typedef {object} GuardrailsConfig
  * @property {AllowEntry[]} [allow]
- * @property {{ threshold?: number; reason?: string; paths?: string[]; ignore?: string[] }} [jscpd]
+ * @property {{ threshold?: number; paths?: string[] }} [jscpd]
  * @property {{ enabled?: boolean; reason?: string; args?: string[] }} [knip]
  * @property {{ maxLines?: number; reason?: string; generated?: { path: string; reason: string }[] }} [fileLength]
  */
@@ -227,8 +227,8 @@ function runKnip(root, config) {
  * @param {GuardrailsConfig} config
  */
 function runJscpd(root, config) {
-  const threshold = config.jscpd?.threshold ?? defaultJscpdThreshold;
-  const ignore = [...alwaysExcluded, ...(config.jscpd?.ignore ?? [])];
+  const threshold = config.jscpd?.threshold ?? maxJscpdThreshold;
+  const ignore = [...alwaysExcluded, ...generatedGlobs(config)];
   return runTool(
     `jscpd (duplication must stay at or below ${String(threshold)}%)`,
     binPath("jscpd", "jscpd"),

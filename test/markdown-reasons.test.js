@@ -1,4 +1,7 @@
-// Integration: run the guardrails CLI in synthetic consumer repositories.
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: runs the guardrails CLI in synthetic consumer repositories to check reason validation; it does not run real consumer repos.
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -80,7 +83,6 @@ test("CLI validates unpadded reasons for every exception setting", () => {
     const valid = reason.trim().length >= 20;
     const configs = [
       { allow: [{ rule: "old-brand", path: "README.md", reason }] },
-      { jscpd: { threshold: 4, reason } },
       { knip: { enabled: false, reason } },
       { fileLength: { maxLines: 1100, reason } },
       { fileLength: { generated: [{ path: "generated/**", reason }] } },

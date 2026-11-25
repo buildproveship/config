@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.0.0 (2026-11-25)
+
+Breaking: code duplication is capped at 1% in every repo (owner decision, 25 Nov 2026, RRDSCRUM-662).
+
+- jscpd fails above 1% when a repo sets no threshold (was 3%). `jscpd.threshold` may only be lowered: the schema rejects any value above 1, so the old "higher threshold with a reason" escape is gone, and so are `jscpd.reason` and `jscpd.ignore`.
+- jscpd skips the same generated sources as the line limit: the built-in `generated/`, `generated.*`, `*.generated.*`, `*.gen.*` and `*.min.js` globs, plus each repo's `fileLength.generated` entries (every one with a reason). Hand-written code always counts.
+- Measured on main on 25 Nov 2026 with these settings: buildproveship 3.84%, test-management 3.89%, test-data-management 1.33% (generated OpenAPI client not counted), universal-playwright-framework 1.78%, buildproveship-product-tests 1.22%, frontend-ui 1.09%; universal-api-framework 0.75%, config 0.46%, observability and universal-appium-framework 0%. A repo moves to `^6.0.0` once its main is at or under 1%: delete `jscpd.threshold`, `jscpd.reason` and `jscpd.ignore` from `releaseready-guardrails.json` and run `npx releaseready-guardrails sync`.
+
 ## 5.2.0 (2026-11-25)
 
 GitHub Team follow-up (BPS-105). This release also ships the RRDPLAT-111 fixes merged since 5.1.0 (#43 to #57), including the fail-closed docs-only classifier that `reusable-ci.yml` calls with the `$/` self-repository reference.

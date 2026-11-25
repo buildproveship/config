@@ -48,7 +48,7 @@ caret range and lockfile, and run `npx releaseready-guardrails` next to ruff, `m
 | `skill-drift`                     | this skill differs from the published copy; AGENTS.md/CLAUDE.md missing or not pointing here                                                                                                                             | UA2-21                        |
 | `unused-allow`                    | an allowlist entry that matches nothing, or whose `max` is higher than today's count                                                                                                                                     | —                             |
 | knip                              | unused files, exports, dependencies; unlisted dependencies and binaries                                                                                                                                                  | TDM-17, RPT-19, UA2-04/05     |
-| jscpd                             | duplicated JS/TS/Python above the repo's threshold (default 3%)                                                                                                                                                          | RR-17, TM-23, UPF-15          |
+| jscpd                             | duplicated JS/TS/Python above 1% (no repo may allow more)                                                                                                                                                                | RR-17, TM-23, UPF-15          |
 
 Shared ESLint (`@buildproveship/config/eslint`), on every JS and TS file:
 
@@ -75,11 +75,7 @@ goes in the repo's `releaseready-guardrails.json`, never in an inline comment:
       "max": 1,
       "reason": "test-management owns the reference primitive; this is the one definition the schema/v1 export serves"
     }
-  ],
-  "jscpd": {
-    "threshold": 4.5,
-    "reason": "measured 4.4% on 19 Nov 2026 (RR-16 OpenAPI fragments); lower it as they are removed"
-  }
+  ]
 }
 ```
 
@@ -88,7 +84,11 @@ goes in the repo's `releaseready-guardrails.json`, never in an inline comment:
 - `max` makes the entry a ratchet: more findings than `max` fail, fewer ask you to lower it.
 - `match` narrows an entry to lines containing that text.
 - An entry that matches nothing fails (`unused-allow`), so the list only shrinks.
-- A jscpd threshold above 3% or `knip.enabled: false` needs a `reason`.
+- jscpd fails above 1% duplication, and no repo can set a higher `jscpd.threshold` (owner decision, 25 Nov 2026,
+  RRDSCRUM-662). There is no jscpd ignore list: fix duplication by extracting the shared code. Generated sources (the
+  built-in `generated/`, `generated.*`, `*.generated.*`, `*.gen.*`, `*.min.js` globs and `fileLength.generated`) are not
+  counted.
+- `knip.enabled: false` needs a `reason`.
 - `fileLength.maxLines` above 1000 needs a `reason`; each `fileLength.generated` entry is `{ "path": "<glob>", "reason": "<what writes the file>" }`.
   A lower limit needs no reason.
 

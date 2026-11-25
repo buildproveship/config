@@ -66,28 +66,20 @@
       }
     },
     "jscpd": {
+      "description": "Duplication settings. No repo may allow more than 1%; generated sources (built-in globs and fileLength.generated) are not counted.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "threshold": { "type": "number", "minimum": 0, "maximum": 100 },
-        "reason": { "$ref": "#/definitions/reason" },
+        "threshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "paths": {
           "type": "array",
           "items": { "type": "string" },
           "minItems": 1
-        },
-        "ignore": { "type": "array", "items": { "type": "string" } }
-      },
-      "if": {
-        "required": ["threshold"],
-        "properties": {
-          "threshold": { "type": "number", "exclusiveMinimum": 3 }
         }
-      },
-      "then": { "required": ["reason"] }
+      }
     },
     "fileLength": {
-      "description": "oversized-source-file settings. A limit above 1000 lines needs a reason; every generated-file glob names why the file is generated.",
+      "description": "oversized-source-file settings. A limit above 1000 lines needs a reason; every generated-file glob names why the file is generated, and neither the line limit nor jscpd counts those files.",
       "type": "object",
       "additionalProperties": false,
       "properties": {

@@ -1,6 +1,6 @@
 {
   "name": "@buildproveship/config",
-  "version": "5.2.0",
+  "version": "6.0.0",
   "description": "Shared ESLint flat config, Prettier config, strict tsconfig base, Renovate preset, the releaseready-guardrails checker and the buildproveship-code-quality skill for BuildProveShip repos.",
   "license": "Apache-2.0",
   "type": "module",
