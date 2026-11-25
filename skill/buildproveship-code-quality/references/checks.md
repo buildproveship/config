@@ -1,10 +1,11 @@
 # What CI checks, and how to adopt it
 
 `releaseready-guardrails` and the shared ESLint config ship in `@buildproveship/config` (one source for every repo).
-Every repo runs them in `pr.yml`. Merge only when `pr.yml` is green. config and universal-appium-framework enforce
-this with GitHub branch protection (required check `ci`, up to date with `main`, no force pushes, admins
-included). The other eight repos are private on GitHub's free plan, which has no branch protection, so there a local
-Claude Code hook on the owner's machine blocks `gh pr merge` until every check on the PR is green.
+Every repo runs them in `pr.yml`. Merge only when `pr.yml` is green. GitHub enforces this: the buildproveship org is
+on GitHub Team, and org rulesets on buildproveship, frontend-ui, test-management and test-data-management require the
+`ci` check (`ci / ci` where it comes from the reusable workflow) on a branch up to date with `main`, with no bypass and
+no force pushes. config and universal-appium-framework do the same with branch protection (required check `ci`, admins
+included). Where a ruleset applies, auto-merge is on: it merges once `ci` passes.
 
 ## Commands
 
