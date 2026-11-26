@@ -11,8 +11,6 @@ import {
 
 const ok = `on:
   pull_request:
-  push:
-    branches: [main]
   schedule:
     - cron: "0 18 * * 0"
 jobs:
@@ -36,8 +34,12 @@ test("each costly pattern is reported", () => {
     ],
     [ok.replace("    timeout-minutes: 10\n", ""), /timeout-minutes/],
     [
-      ok.replace("    branches: [main]", "    paths: ['src/**']"),
+      ok.replace("  pull_request:\n", "  push:\n    paths: ['src/**']\n"),
       /branches or tags filter/,
+    ],
+    [
+      ok.replace("  schedule:", "  push:\n    branches: [main]\n  schedule:"),
+      /both run the checks/,
     ],
     [ok.replace("0 18 * * 0", "30 18 * * *"), /more than weekly/],
     [

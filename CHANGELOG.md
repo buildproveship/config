@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The caller template no longer triggers on `push` to `main`. `main` requires an up-to-date branch and the `ci` check, so the PR run already checked the tree that merges; the second run after every merge only burned minutes (RRDPLAT-114). `npm run check:workflow-cost` now fails a workflow that has both `pull_request` and `push`. Consumers drop the two `push:` lines from `pr.yml` (the rollout does it on its next run).
+
 ## 6.2.0 (2026-11-25)
 
 All repos run on the self-hosted Mac runner (owner decision, "All savings, CI on your Mac", 25 Nov 2026, RRDPLAT-114).
