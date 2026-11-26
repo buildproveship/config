@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.3.1 (2026-11-26)
+
+- The skill's design row now says to start from Design Studio, not the retired Design Library hub (owner ruling, 26 Nov 2026). No rule or guard changes. A consumer's `skill-drift` check fails until it upgrades and runs `npx releaseready-guardrails sync`.
+
 ## 6.3.0 (2026-11-26)
 
 - New opt-in guardrails `local-ui-component` and `literal-colour` (design-lint rule 10, owner decision 26 Nov 2026). A repo lists `designSystem.paths` in `releaseready-guardrails.json`; matching `.ts`, `.tsx` and `.css` files (not tests) fail when they declare a component with a `@buildproveship/ui-web` name (`Button`, `Notice`, `StateMessage` and the rest of the v8 set) or type a literal colour (`#hex`, `rgb()`, `hsl()`, `oklch()`) instead of a `@buildproveship/tokens` variable. Repos that do not opt in see no change, so this is a minor release. Measured on buildproveship `apps/web/src` on 26 Nov 2026: 132 findings (65 in the local copy `ui/`, 32 in `style.css`), which that repo allow-lists with a `max` and a removal reason until the local copy is deleted.
