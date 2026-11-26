@@ -30,6 +30,7 @@ const jscpdFormats = "javascript,typescript,jsx,tsx,python";
  * @property {AllowEntry[]} [allow]
  * @property {{ threshold?: number; paths?: string[] }} [jscpd]
  * @property {{ enabled?: boolean; reason?: string; args?: string[] }} [knip]
+ * @property {{ paths?: string[] }} [designSystem]
  * @property {{ maxLines?: number; reason?: string; generated?: { path: string; reason: string }[] }} [fileLength]
  */
 

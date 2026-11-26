@@ -51,6 +51,8 @@
               "eslint-rule-off-without-reason",
               "readme-dated-history",
               "old-brand",
+              "local-ui-component",
+              "literal-colour",
               "tracked-ds-store",
               "tracked-build-output",
               "oversized-source-file",
@@ -74,6 +76,19 @@
         "paths": {
           "type": "array",
           "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    },
+    "designSystem": {
+      "description": "Opt-in design-system bypass check (design-lint rule 10). Files matching these globs must use @buildproveship/ui-web components and @buildproveship/tokens variables: a local component with a ui-web name (local-ui-component) or a literal colour (literal-colour) fails.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paths"],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
           "minItems": 1
         }
       }

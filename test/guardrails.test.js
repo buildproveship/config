@@ -496,6 +496,39 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
+  test("design-system bypass: opted-in app paths fail on a local ui-web component or a literal colour; tokens, imports, tests and other paths pass", async () => {
+    const files = {
+      "releaseready-guardrails.json": JSON.stringify({
+        designSystem: { paths: ["apps/web/src/**"] },
+      }),
+      "apps/web/src/Button.tsx":
+        "export function Button() {\n  return null;\n}\n",
+      "apps/web/src/Local.tsx":
+        'import { Notice } from "@buildproveship/ui-web";\nexport const x = <Notice style={{ color: "#fff" }} />;\n',
+      "apps/web/src/ok.css":
+        ".a { color: var(--rr-v8-ink); }\n.b { background: rgb(0 0 0); }\n",
+      "apps/web/src/ok.test.tsx": "const Button = () => null; // #fff\n",
+      "apps/web/src/fine.tsx":
+        'import { Button } from "@buildproveship/ui-web";\n// #fff is in a comment\nexport const y = Button;\n',
+      "other/Button.tsx": "export function Button() {}\nconst c = '#fff';\n",
+    };
+    assert.deepEqual(await rulesHit(files), [
+      "local-ui-component apps/web/src/Button.tsx:1",
+      "literal-colour apps/web/src/Local.tsx:2",
+      "literal-colour apps/web/src/ok.css:2",
+    ]);
+  });
+
+  test("design-system bypass is off until a repo opts in", async () => {
+    assert.deepEqual(
+      await rulesHit({
+        "apps/web/src/Button.tsx":
+          "export function Button() {}\nconst c = '#fff';\n",
+      }),
+      [],
+    );
+  });
+
   test("skill rename: sync removes the old copy and writes an alias stub; a leftover old copy is skill-drift", async () => {
     const root = await repo({
       "skills/releaseready-code-quality/SKILL.md": "old copy\n",
