@@ -499,14 +499,14 @@ test("the nightly workflow never runs for pull requests", () => {
   assert.equal(nightly.jobs["e2e"]?.["runs-on"], "${{ inputs.runner }}");
 });
 
-test("the caller templates run on ready PRs and main, and the Copilot job has the required name", () => {
+test("the caller templates run on ready PRs only (no duplicate run on main), and the Copilot job has the required name", () => {
   const pr = workflow("templates/workflows/pr.yml");
   const on =
-    /** @type {{ pull_request: { types: string[] }; push: { branches: string[] } }} */ (
+    /** @type {{ pull_request: { types: string[] }; push?: unknown }} */ (
       pr.on
     );
   assert.ok(on.pull_request.types.includes("ready_for_review"));
-  assert.deepEqual(on.push.branches, ["main"]);
+  assert.equal(on.push, undefined);
   assert.ok(
     workflow("templates/copilot-setup-steps.yml").jobs["copilot-setup-steps"],
   );

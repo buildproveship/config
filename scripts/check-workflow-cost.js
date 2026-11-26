@@ -38,6 +38,11 @@ export function findCostProblems(file, text) {
   if (events.includes("push") && !on.push?.branches && !on.push?.tags) {
     problems.push(`${file}: push trigger needs a branches or tags filter`);
   }
+  if (events.includes("push") && events.includes("pull_request")) {
+    problems.push(
+      `${file}: push and pull_request both run the checks; main needs an up-to-date branch, so drop push`,
+    );
+  }
   for (const item of on.schedule ?? []) {
     if (moreOftenThanWeekly(String(item.cron))) {
       problems.push(
