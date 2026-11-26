@@ -7,6 +7,7 @@ import {
 } from "jsonc-parser";
 import { minimatch } from "minimatch";
 import { posix } from "node:path";
+import { designSystemBypass } from "./design-system.js";
 import { commentsOf, severityLocations, skippedTestLines } from "./syntax.js";
 
 /**
@@ -30,7 +31,7 @@ import { commentsOf, severityLocations, skippedTestLines } from "./syntax.js";
 /** @typedef {(repo: RepoFiles, config: GuardrailsConfig) => Finding[]} Rule */
 
 const sourceGlob = "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs,py}";
-const testGlobs = [
+export const testGlobs = [
   "**/*.{test,spec}.{ts,tsx,mts,cts,js,jsx,mjs,cjs}",
   "**/{test,tests,__tests__,e2e}/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}",
 ];
@@ -47,7 +48,7 @@ export const alwaysExcluded = [
 ];
 
 /** The skill's own text names every marker it forbids; skill-drift checks it instead. */
-const skillCopies = [
+export const skillCopies = [
   "skills/releaseready-code-quality/**",
   ".claude/skills/releaseready-code-quality/**",
   "skills/buildproveship-code-quality/**",
@@ -983,4 +984,5 @@ export const rules = [
   trackedDsStore,
   trackedBuildOutput,
   oversizedSourceFile,
+  designSystemBypass,
 ];
