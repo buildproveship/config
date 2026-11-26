@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.3.0 (2026-11-26)
 
 - New opt-in guardrails `local-ui-component` and `literal-colour` (design-lint rule 10, owner decision 26 Nov 2026). A repo lists `designSystem.paths` in `releaseready-guardrails.json`; matching `.ts`, `.tsx` and `.css` files (not tests) fail when they declare a component with a `@buildproveship/ui-web` name (`Button`, `Notice`, `StateMessage` and the rest of the v8 set) or type a literal colour (`#hex`, `rgb()`, `hsl()`, `oklch()`) instead of a `@buildproveship/tokens` variable. Repos that do not opt in see no change, so this is a minor release. Measured on buildproveship `apps/web/src` on 26 Nov 2026: 132 findings (65 in the local copy `ui/`, 32 in `style.css`), which that repo allow-lists with a `max` and a removal reason until the local copy is deleted.
 - The caller template no longer triggers on `push` to `main`. `main` requires an up-to-date branch and the `ci` check, so the PR run already checked the tree that merges; the second run after every merge only burned minutes (RRDPLAT-114). `npm run check:workflow-cost` now fails a workflow that has both `pull_request` and `push`. Consumers drop the two `push:` lines from `pr.yml` (the rollout does it on its next run).
