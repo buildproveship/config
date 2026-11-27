@@ -85,7 +85,7 @@ output stay in each repo because they differ by runtime.
 ```
 
 Weekly (Monday before 06:00 Hong Kong time), 3-day minimum release age, pinned versions and action digests, grouped
-non-major dev updates, one group for lint/format/typecheck tooling, security updates at any time. Renovate needs the
+non-major dev updates, one group for lint/format/typecheck tooling, security updates at any time. `@buildproveship/ui-web` and `@buildproveship/tokens` get their own PR at any time and automerge when `ci` is green, so an app never falls behind the design system. Renovate needs the
 [Renovate GitHub App](https://github.com/apps/renovate) installed on the `buildproveship` organisation.
 
 ## Local quality gates and CI
