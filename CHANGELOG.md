@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.5.0 (2026-11-27)
+
+Pre-commit no longer fails on ignored generated files (RRDTM-141).
+
+- The shared lint-staged command runs `eslint --max-warnings 0 --no-warn-ignored --fix`. Before, staging a file the repo's ESLint config ignores (for example generated OpenAPI types) made ESLint report "File ignored because of a matching ignore pattern" as a warning, and `--max-warnings 0` failed the commit, so such files could not be committed without bypassing the hook. Ignored files are still formatted by Prettier; files ESLint checks are linted as before. Consumers with their own root `lint-staged.config.mjs` that forwards `@buildproveship/config/lint-staged` get it on upgrade; a consumer-owned command needs the flag added by hand. No rule changes.
+
 ## 6.4.0 (2026-11-27)
 
 Keep apps on the design system (RRDSCRUM-682).
