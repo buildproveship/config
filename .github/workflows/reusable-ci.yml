@@ -5,7 +5,9 @@
 #   - drafts are skipped; the caller also triggers on ready_for_review, so marking ready starts the run
 #   - docs-only PRs skip checks; `ci` reports success under that policy and logs that checks were not run
 #   - one job, not three: every hosted job bills at least one minute, so classify, check and report run as steps of `ci`
-#   - one run per PR (cancel-in-progress), dependencies and build output cached
+#   - one run per PR (cancel-in-progress): a new push cancels the superseded run. Merge-queue runs (`merge_group`) are
+#     never cancelled, because a cancelled queue run ejects the PR from the queue.
+#   - dependencies and build output cached
 #   - the default runner is GitHub-hosted `ubuntu-24.04` (owner decision, 25 Nov 2026, BPS-105). A repo opts into the
 #     self-hosted `rr-local` with `runner: rr-local` (frontend-ui only). Fork PRs never get it: a public repo would
 #     otherwise run a stranger's code on the owner's Mac, so they always run on a GitHub-hosted runner.
@@ -43,7 +45,7 @@ permissions:
   packages: read
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   # The one required status check (`ci / ci`). Drafts skip it; docs-only changes report the policy exemption.
   ci:
