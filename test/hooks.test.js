@@ -464,7 +464,7 @@ function workflow(file) {
 }
 
 const FORK_GUARD =
-  "${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner }}";
+  "${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner == 'aws' && format('runs-on={0}/runner=4cpu-linux-x64', github.run_id) || inputs.runner }}";
 
 test("the reusable CI workflow keeps fork PRs off the self-hosted runner and skips drafts", () => {
   const ci = workflow(".github/workflows/reusable-ci.yml");
@@ -482,7 +482,7 @@ test("the reusable CI workflow keeps fork PRs off the self-hosted runner and ski
     /** @type {{ workflow_call: { inputs: Record<string, { default: string }> } }} */ (
       ci.on
     ).workflow_call.inputs;
-  assert.equal(inputs["runner"]?.default, "rr-local");
+  assert.equal(inputs["runner"]?.default, "aws");
   assert.equal(inputs["docs-only-pattern"]?.default, DOCS_ONLY_PATTERN);
   assert.deepEqual(Object.keys(ci.jobs), ["ci"]);
   const job = ci.jobs["ci"];
@@ -500,7 +500,10 @@ test("the nightly workflow never runs for pull requests", () => {
   const nightly = workflow(".github/workflows/reusable-nightly.yml");
   assert.match(nightly.jobs["e2e"]?.if ?? "", /schedule/);
   assert.doesNotMatch(nightly.jobs["e2e"]?.if ?? "", /pull_request/);
-  assert.equal(nightly.jobs["e2e"]?.["runs-on"], "${{ inputs.runner }}");
+  assert.equal(
+    nightly.jobs["e2e"]?.["runs-on"],
+    "${{ inputs.runner == 'aws' && format('runs-on={0}/runner=4cpu-linux-x64', github.run_id) || inputs.runner }}",
+  );
 });
 
 test("the caller templates run on ready PRs only (no duplicate run on main), and the Copilot job has the required name", () => {

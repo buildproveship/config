@@ -153,8 +153,10 @@ the full commit sha of a release tag:
   The copied workflow includes an immutable installer reference; the rollout renderer substitutes the already-selected Config release SHA.
   Both paths install the scanner once. The agent rules tell it to run `npx releaseready-hooks verify` before it opens a pull request.
 
-The `runner` input defaults to the owner's self-hosted `rr-local` runner (RRDPLAT-114, 25 Nov 2026: the org's
-GitHub-hosted Actions budget was spent), so no repo needs a runner rule of its own. **Pull requests from forks always run on `ubuntu-24.04`**: this repo and its consumers
+The `runner` input defaults to `aws`: the organization's RunsOn spot runners in `ap-south-1`, 4 vCPU, with an on-demand
+fallback when spot is unavailable (RRDPLAT-114, 27 Nov 2026; the stack lives in `cloud-platform` under
+`environments/dev/ci-runners`). A repo passes `runner: rr-local` to use the owner's Mac runner instead, so no repo needs
+a runner rule of its own. **Pull requests from forks always run on `ubuntu-24.04`**: this repo and its consumers
 can be public, and the self-hosted runner must never execute a stranger's code. The nightly workflow never runs for pull
 requests.
 

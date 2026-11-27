@@ -5,7 +5,7 @@ on:
       runner:
         description: Same-repo runner; fork PRs always use hosted Ubuntu.
         type: string
-        default: ubuntu-24.04
+        default: aws
       docs-only-pattern:
         description: Extended regex defining the caller's existing docs-only skip policy.
         type: string
@@ -19,7 +19,7 @@ permissions:
 jobs:
   classify:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
-    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner == 'aws' && format('runs-on={0}/runner=4cpu-linux-x64', github.run_id) || inputs.runner }}
     timeout-minutes: 5
     outputs:
       docs_only: ${{ steps.diff.outputs.docs_only }}

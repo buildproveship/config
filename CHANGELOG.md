@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.7.0 (2026-11-27)
+
+CI runs on the organization's AWS spot runners (RRDPLAT-114).
+
+- `reusable-ci.yml`, `classify-changes.yml` and `reusable-nightly.yml`: the `runner` input now defaults to `aws`, which expands to the RunsOn label `runs-on=<run_id>/runner=4cpu-linux-x64` (spot first, on-demand fallback). `runner: rr-local` still selects the owner's Mac runner. Fork PRs still run on `ubuntu-24.04` and never on a self-hosted runner. Before, the default was `rr-local`.
+- **Do not adopt this release until the RunsOn stack from `cloud-platform` (`environments/dev/ci-runners`) is applied and its GitHub App installed**: until then an `aws` job stays queued with no runner. Consumers that pass `runner: rr-local` are unaffected.
+
 ## 6.6.0 (2026-11-27)
 
 Merge-queue ready CI (RRDPLAT-114).

@@ -18,9 +18,11 @@ on:
   workflow_call:
     inputs:
       runner:
-        description: Runner label for same-repo PRs and main. Fork PRs always use ubuntu-24.04.
+        description: >-
+          Runner for same-repo PRs and main. `aws` (default) is the organization's RunsOn spot runners in ap-south-1
+          (4 vCPU, spot with on-demand fallback); `rr-local` is the owner's Mac runner. Fork PRs always use ubuntu-24.04.
         type: string
-        default: rr-local
+        default: aws
       node-version-file:
         type: string
         default: .nvmrc
@@ -50,7 +52,7 @@ jobs:
   # The one required status check (`ci / ci`). Drafts skip it; docs-only changes report the policy exemption.
   ci:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
-    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner == 'aws' && format('runs-on={0}/runner=4cpu-linux-x64', github.run_id) || inputs.runner }}
     timeout-minutes: 20
     permissions:
       contents: read

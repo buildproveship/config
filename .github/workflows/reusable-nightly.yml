@@ -1,5 +1,5 @@
-# Nightly full E2E, called from a repo's schedule workflow (templates/workflows/nightly.yml). Runs on GitHub-hosted
-# ubuntu-24.04 unless the caller passes `runner: rr-local`. Never runs for pull requests, so a self-hosted runner
+# Nightly full E2E, called from a repo's schedule workflow (templates/workflows/nightly.yml). Runs on the organization's
+# RunsOn AWS runners (`runner: aws`, the default) unless the caller passes `runner: rr-local`. Never runs for pull requests, so a self-hosted runner
 # never executes code from a fork.
 name: Reusable nightly E2E
 on:
@@ -7,7 +7,7 @@ on:
     inputs:
       runner:
         type: string
-        default: rr-local
+        default: aws
       node-version-file:
         type: string
         default: .nvmrc
@@ -24,7 +24,7 @@ concurrency:
 jobs:
   e2e:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner == 'aws' && format('runs-on={0}/runner=4cpu-linux-x64', github.run_id) || inputs.runner }}
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
