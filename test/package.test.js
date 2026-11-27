@@ -51,3 +51,17 @@ test("the Renovate preset pins actions and groups tooling", async () => {
     ),
   );
 });
+
+test("the Renovate preset opens ui-web and tokens updates at once and automerges them, so no app falls behind the design system", async () => {
+  /** @type {{ packageRules: { groupName?: string; schedule?: string[]; automerge?: boolean; matchPackageNames?: string[] }[] }} */
+  const preset = JSON.parse(
+    await readFile(new URL("../default.json", import.meta.url), "utf8"),
+  );
+  const rule = preset.packageRules.find((r) => r.groupName === "design system");
+  assert.deepEqual(rule?.matchPackageNames, [
+    "@buildproveship/ui-web",
+    "@buildproveship/tokens",
+  ]);
+  assert.deepEqual(rule.schedule, ["at any time"]);
+  assert.equal(rule.automerge, true);
+});

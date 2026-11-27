@@ -48,6 +48,16 @@
       "automerge": false
     },
     {
+      "description": "Design system: ui-web and tokens updates open at once, not on the weekly schedule, in their own PR, and merge when `ci` is green, so an app never sits behind the latest palette or components (RRDSCRUM-682).",
+      "matchPackageNames": ["@buildproveship/ui-web", "@buildproveship/tokens"],
+      "groupName": "design system",
+      "schedule": ["at any time"],
+      "minimumReleaseAge": null,
+      "rangeStrategy": "bump",
+      "automerge": true,
+      "labels": ["dependencies", "design-system"]
+    },
+    {
       "description": "Lint, format and type-check tooling moves together.",
       "matchPackageNames": [
         "@buildproveship/config",

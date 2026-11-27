@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.4.0 (2026-11-27)
+
+Keep apps on the design system (RRDSCRUM-682).
+
+- Renovate preset: `@buildproveship/ui-web` and `@buildproveship/tokens` updates open at any time (not Monday), skip the 3-day release age, group as "design system", and automerge when `ci` is green. Before, the weekly group never automerged, so apps sat on an old palette. Consumers pick it up with no change (they extend `github>buildproveship/config`).
+- The skill's smell table, the AGENTS.md and CLAUDE.md templates and this repo's own copies say it: no literal colour, no re-declared palette variable and no local copy of a ui-web component; list the app's source globs in `designSystem.paths` (the `literal-colour` and `local-ui-component` guardrails from 6.3.0). Consumers get the text with `npx releaseready-guardrails sync`.
+
 ## 6.3.1 (2026-11-26)
 
 - The skill's design row now says to start from Design Studio, not the retired Design Library hub (owner ruling, 26 Nov 2026). No rule or guard changes. A consumer's `skill-drift` check fails until it upgrades and runs `npx releaseready-guardrails sync`.
