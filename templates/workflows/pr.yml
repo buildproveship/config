@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
+  # Merge queue: the required `ci` check must also report on the queue's temporary branch (RRDPLAT-114).
+  merge_group:
+    types: [checks_requested]
 permissions:
   contents: read
   pull-requests: read

@@ -457,7 +457,7 @@ test("install points git at Husky and writes the three hooks; CI skips it", () =
 
 /**
  * @param {string} file
- * @returns {{ on: Record<string, unknown>; jobs: Record<string, { if?: string; "runs-on"?: string; with?: Record<string, string>; uses?: string; needs?: string; steps?: { run?: string; id?: string }[] }>; concurrency?: { "cancel-in-progress": boolean } }}
+ * @returns {{ on: Record<string, unknown>; jobs: Record<string, { if?: string; "runs-on"?: string; with?: Record<string, string>; uses?: string; needs?: string; steps?: { run?: string; id?: string }[] }>; concurrency?: { "cancel-in-progress": string } }}
  */
 function workflow(file) {
   return parse(readFileSync(join(REPO, file), "utf8"));
@@ -473,7 +473,11 @@ test("the reusable CI workflow keeps fork PRs off the self-hosted runner and ski
     "utf8",
   );
   assert.doesNotMatch(text, /pull_request_target/);
-  assert.equal(ci.concurrency?.["cancel-in-progress"], true);
+  // Superseded PR runs are cancelled; merge-queue runs never are (a cancelled queue run ejects the PR).
+  assert.equal(
+    ci.concurrency?.["cancel-in-progress"],
+    "${{ github.event_name == 'pull_request' }}",
+  );
   const inputs =
     /** @type {{ workflow_call: { inputs: Record<string, { default: string }> } }} */ (
       ci.on
@@ -507,6 +511,12 @@ test("the caller templates run on ready PRs only (no duplicate run on main), and
     );
   assert.ok(on.pull_request.types.includes("ready_for_review"));
   assert.equal(on.push, undefined);
+  assert.deepEqual(
+    /** @type {{ merge_group?: { types: string[] } }} */ (pr.on).merge_group
+      ?.types,
+    ["checks_requested"],
+    "the caller must run on merge_group or a merge queue waits for `ci` forever",
+  );
   assert.ok(
     workflow("templates/copilot-setup-steps.yml").jobs["copilot-setup-steps"],
   );

@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.6.0 (2026-11-27)
+
+Merge-queue ready CI (RRDPLAT-114).
+
+- The caller template `templates/workflows/pr.yml` also triggers on `merge_group` (`checks_requested`), so the required `ci` check reports on a merge queue's temporary branch. Before, a queue would wait forever for `ci`. A consumer adds the same three lines to its own `pr.yml` when it turns the queue on.
+- `reusable-ci.yml` still cancels a superseded run on a new push, but only for `pull_request` events; a `merge_group` run is never cancelled, because that ejects the PR from the queue. Config's own `pr.yml` gets the same trigger and rule. No rule changes for consumers.
+
 ## 6.5.0 (2026-11-27)
 
 Pre-commit no longer fails on ignored generated files (RRDTM-141).
