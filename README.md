@@ -165,7 +165,7 @@ for pull requests.
 
 ## Guardrails and the code-quality skill
 
-Agents and vendors also read [docs/defects-we-dont-create.md](docs/defects-we-dont-create.md) (the defect classes to avoid) and write tickets with [docs/ticket-template.md](docs/ticket-template.md).
+Agents and vendors also read [docs/defects-we-dont-create.md](docs/defects-we-dont-create.md) (the defect classes to avoid) and write tickets with [docs/ticket-template.md](docs/ticket-template.md). Past defects and the guards that stop them are in [docs/findings/](docs/findings/README.md).
 
 `buildproveship-guardrails` is the mechanical half of the
 [`buildproveship-code-quality` skill](skill/buildproveship-code-quality/SKILL.md), which encodes the 191 findings of the
