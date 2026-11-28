@@ -25,7 +25,7 @@ test("the runner image gets gh and jq, which the shared CI uses and Amazon Linux
   assert.match(main, /userdata_post_install\s*=\s*<<-EOT/);
   assert.match(main, /dnf install -y[^\n]*\bjq\b/);
   assert.match(main, /dnf install -y[^\n]*\bgh\b/);
-  assert.match(main, /set -euo pipefail/);
+  assert.match(main, /\(\s*\n\s*set -euo pipefail[\s\S]*?\n\s*\)\s*\n\s*EOT/);
 });
 
 test("runners are spot, ephemeral and idle-free", () => {

@@ -56,12 +56,15 @@ module "runners" {
 
   # The shared CI uses `gh` (changed-files classifier) and `jq`; GitHub-hosted images and the Mac have them, the bare Amazon
   # Linux 2023 image does not (first spot run failed with exit 127). gh comes from GitHub's own signed dnf repository.
+  # A subshell keeps strict mode from leaking into the module's own user-data script, which is pasted around this snippet.
   userdata_post_install = <<-EOT
-    set -euo pipefail
-    dnf install -y --setopt=install_weak_deps=False jq dnf-plugins-core
-    dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-    dnf install -y --setopt=install_weak_deps=False gh
-    gh --version
+    (
+      set -euo pipefail
+      dnf install -y --setopt=install_weak_deps=False jq dnf-plugins-core
+      dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+      dnf install -y --setopt=install_weak_deps=False gh
+      gh --version
+    )
   EOT
   # -1 removes reserved concurrency: a new AWS account allows only 10 concurrent Lambda executions, and AWS requires 5 to stay
   # unreserved, so the module default of 1 reserved fails to apply. The 2-instance cap is runners_maximum_count above.
