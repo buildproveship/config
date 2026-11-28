@@ -28,9 +28,11 @@ test("no NAT gateway or private-subnet network is created", () => {
   assert.match(main, /data "aws_vpc" "default"/);
 });
 
-test("the module and lambdas are pinned to one release", () => {
-  const refs = [...main.matchAll(/\?ref=(v[\d.]+)/g)].map((m) => m[1]);
-  assert.equal(refs.length, 2);
-  assert.equal(new Set(refs).size, 1);
-  assert.match(variables, new RegExp(`default\\s*=\\s*"${refs[0]}"`));
+test("the module and its lambda zips are pinned to one release", () => {
+  const pins = [
+    ...main.matchAll(/\?ref=(v[\d.]+)/g),
+    ...main.matchAll(/tag\s*=\s*"(v[\d.]+)"/g),
+  ].map((m) => m[1]);
+  assert.equal(pins.length, 5);
+  assert.equal(new Set(pins).size, 1);
 });

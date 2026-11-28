@@ -17,12 +17,13 @@ data "aws_subnets" "default" {
   }
 }
 
+# The module and its lambda zips must stay on the same release (the test checks all three pins).
 module "lambdas" {
   source = "github.com/github-aws-runners/terraform-aws-github-runner//modules/download-lambda?ref=v7.9.0"
   lambdas = [
-    { name = "webhook", tag = var.module_version },
-    { name = "runners", tag = var.module_version },
-    { name = "runner-binaries-syncer", tag = var.module_version },
+    { name = "webhook", tag = "v7.9.0" },
+    { name = "runners", tag = "v7.9.0" },
+    { name = "runner-binaries-syncer", tag = "v7.9.0" },
   ]
 }
 

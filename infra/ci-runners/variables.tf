@@ -10,12 +10,6 @@ variable "prefix" {
   default     = "ci-spot"
 }
 
-variable "module_version" {
-  description = "Release of github-aws-runners/terraform-aws-github-runner; also selects the lambda zips it downloads."
-  type        = string
-  default     = "v7.9.0"
-}
-
 variable "runner_label" {
   description = "The single label jobs use to reach these runners (the `spot-runner` input of the shared CI)."
   type        = string
