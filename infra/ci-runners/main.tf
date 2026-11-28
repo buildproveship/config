@@ -53,6 +53,9 @@ module "runners" {
   instance_types                = var.instance_types
   instance_max_spot_price       = "0.05"
   runners_maximum_count         = var.max_runners
+  # -1 removes reserved concurrency: a new AWS account allows only 10 concurrent Lambda executions, and AWS requires 5 to stay
+  # unreserved, so the module default of 1 reserved fails to apply. The 2-instance cap is runners_maximum_count above.
+  scale_up_reserved_concurrent_executions = -1
 
   associate_public_ipv4_address   = true
   create_service_linked_role_spot = true

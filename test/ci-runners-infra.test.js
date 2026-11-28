@@ -17,6 +17,10 @@ test("the runner count is capped at 2 and the cap cannot be raised by a variable
   assert.match(variables, /var\.max_runners <= 2/);
 });
 
+test("the scale-up lambda reserves no concurrency, which a new AWS account cannot spare", () => {
+  assert.match(main, /scale_up_reserved_concurrent_executions\s*=\s*-1\b/);
+});
+
 test("runners are spot, ephemeral and idle-free", () => {
   assert.match(main, /instance_target_capacity_type\s*=\s*"spot"/);
   assert.match(main, /enable_ephemeral_runners\s*=\s*true/);
