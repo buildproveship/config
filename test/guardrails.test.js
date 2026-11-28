@@ -961,10 +961,11 @@ describe("CLI", () => {
 
 describe("allowlist schema", () => {
   test("every rule the scanners emit can be allowlisted in releaseready-guardrails.json", () => {
-    const source = readFileSync(
-      new URL("../guardrails/rules.js", import.meta.url),
-      "utf8",
-    );
+    const source = ["rules.js", "old-code-rules.js"]
+      .map((file) =>
+        readFileSync(new URL(`../guardrails/${file}`, import.meta.url), "utf8"),
+      )
+      .join("\n");
     const emitted = new Set(
       [...source.matchAll(/\brule: "([a-z-]+)"/g)].map((m) => m[1]),
     );

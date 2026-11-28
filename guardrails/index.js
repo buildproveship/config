@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { Ajv } from "ajv";
+import { legacyRules } from "./old-code-rules.js";
 import { alwaysExcluded, generatedGlobs, matches, rules } from "./rules.js";
 import { skillDrift } from "./skill.js";
 
@@ -258,7 +259,7 @@ function runJscpd(root, config) {
 export async function findAll(root, config = loadConfig(root)) {
   const repo = repoFiles(root);
   return [
-    ...rules.flatMap((rule) => rule(repo, config)),
+    ...[...rules, ...legacyRules].flatMap((rule) => rule(repo, config)),
     ...(await skillDrift(repo)),
   ];
 }

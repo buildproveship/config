@@ -3,7 +3,7 @@
   "allow": [
     {
       "rule": "legacy-marker",
-      "path": "guardrails/{rules,index}.js",
+      "path": "guardrails/{rules,old-code-rules,index}.js",
       "reason": "The checker's own legacy-marker pattern and its messages name the markers it forbids"
     },
     {
@@ -40,6 +40,12 @@
       "path": "guardrails/rules.js",
       "max": 1,
       "reason": "The rule's own pattern contains the ZIP signature it detects"
+    },
+    {
+      "rule": "hand-written-xml-parser",
+      "path": "test/guardrails.test.js",
+      "max": 1,
+      "reason": "The tests feed deliberate regex-built XML parsing to the hand-written-xml-parser rule"
     },
     {
       "rule": "copied-wcag-contrast",
