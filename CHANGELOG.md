@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+Fewer false positives in the 7.0.0 guardrails (RRDSCRUM-437).
+
+- `hand-written-xml-parser` skips regexes over HTML element names (`<script>`, `<style>`, `<table>`, `<button>` and so on) and the `<think>` tag: those scan HTML or model text, not XML. Measured on `origin/main` of 11 repos: 0 hits after this change (16 before, all HTML scanners).
+- `legacy-path-name` no longer matches an upstream version number such as `osv-schema-v1.9.2.json`. The remaining hits are versioned contract files (list their folders in `contractPaths`) and one brand-asset folder.
+
 ## 7.0.0 (2026-11-28)
 
 Breaking: the shared tools drop the ReleaseReady name. No aliases are kept; every consumer updates in the same rollout.

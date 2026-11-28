@@ -265,10 +265,12 @@ describe("buildproveship-guardrails rules", () => {
     ]);
   });
 
-  test("hand-written-xml-parser: regex-built XML parsing fails, ordinary regexes and HTML strings pass", async () => {
+  test("hand-written-xml-parser: regex-built XML parsing fails; ordinary regexes, HTML strings and HTML-tag scanners pass", async () => {
     const hits = await rulesHit({
       "src/xml.ts":
         'const tag = /<item[^>]*>([\\s\\S]*?)<\\/item>/g;\nconst attr = xml.match(/<([a-z]+)\\s[^>]*>(.*?)<\\/\\1>/);\nconst r = new RegExp("<row[^>]*>(.*?)</row>");\n',
+      "src/html.ts":
+        'const style = /<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi;\\nconst btn = /<(button|input)\\b[^>]*\\sdisabled/gi;\\nconst think = s.replace(/<think>[\\s\\S]*?<\\/think>/g, "");\\n',
       "src/fine.ts":
         'const html = "<div class=\\"a\\">hi</div>";\nconst word = /\\bitem\\b/;\nconst generic: Array<string> = [];\nconst id = /^[a-z]+$/;\n',
     });
@@ -286,6 +288,7 @@ describe("buildproveship-guardrails rules", () => {
       "src/compat.ts": "export const c = 1;\n",
       "src/v1/routes.ts": "export const d = 1;\n",
       "src/v10.ts": "export const e = 1;\n",
+      "src/osv-schema-v1.9.2.json": "{}\n",
       "src/invoice-compatible.ts": "export const f = 1;\n",
       "src/generated/v1/api.ts": "export const g = 1;\n",
       "src/contract/schema/v1/index.ts": "export const h = 1;\n",
