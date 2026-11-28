@@ -28,9 +28,9 @@ variable "max_runners" {
 }
 
 variable "instance_types" {
-  description = "Spot instance types, tried in price-capacity-optimized order."
+  description = "Cheapest 2 vCPU spot types first (compute-optimised), tried in price-capacity-optimized order."
   type        = list(string)
-  default     = ["m7a.large", "m7i.large", "m6a.large", "m6i.large"]
+  default     = ["c7a.large", "c6a.large", "m7a.large", "m6a.large"]
 }
 
 variable "github_app" {

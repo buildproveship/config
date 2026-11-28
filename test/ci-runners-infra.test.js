@@ -55,3 +55,17 @@ test("the only trivy exception is the runner egress finding, and it carries a re
       .includes("Reason:"),
   );
 });
+
+test("a hard budget ceiling of at most 20 USD stops new launches", () => {
+  const budget = readFileSync(
+    new URL("../infra/ci-runners/budget.tf", import.meta.url),
+    "utf8",
+  );
+  assert.match(budget, /default\s*=\s*20\b/);
+  assert.match(budget, /var\.monthly_ceiling_usd <= 20/);
+  assert.match(budget, /action_type\s*=\s*"APPLY_IAM_POLICY"/);
+  assert.match(budget, /approval_model\s*=\s*"AUTOMATIC"/);
+  assert.match(budget, /action_threshold_value\s*=\s*100/);
+  assert.match(budget, /"ec2:RunInstances", "ec2:CreateFleet"/);
+  assert.match(main, /instance_max_spot_price\s*=\s*"0\.05"/);
+});
