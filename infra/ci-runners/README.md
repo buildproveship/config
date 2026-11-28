@@ -1,4 +1,4 @@
-# CI spot runners (RRDPLAT-114)
+# CI spot runners
 
 Ephemeral AWS spot runners that the shared CI uses when the Mac runner is offline or busy and the caller sets
 `spot-runner: ci-spot`. Built on [github-aws-runners/terraform-aws-github-runner](https://github.com/github-aws-runners/terraform-aws-github-runner)
