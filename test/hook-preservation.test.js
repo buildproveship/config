@@ -8,6 +8,7 @@ import {
   readFileSync,
   rmSync,
   symlinkSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -111,7 +112,8 @@ test("installer preserves symlink destinations, including dangling links", () =>
     assert.equal(install().status, 1);
     assert.equal(existsSync(target), exists);
     if (exists) assert.equal(readFileSync(target, "utf8"), "consumer data\n");
-    rmSync(join(root, ".husky/pre-push"));
+    // unlinkSync, not rmSync: Node 24.4 leaves a dangling symlink behind on rmSync, so the next loop pass hit EEXIST.
+    unlinkSync(join(root, ".husky/pre-push"));
   }
 });
 
