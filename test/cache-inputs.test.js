@@ -98,5 +98,5 @@ test("opt-in build cache invalidates source, config and dependency inputs", (t) 
   );
   assert.ok(cache.with.key.includes("runner.arch"));
   assert.ok(cache.with.key.includes("steps.node.outputs.node-version"));
-  assert.deepEqual(Object.keys(workflow.jobs), ["ci"]);
+  assert.deepEqual(Object.keys(workflow.jobs), ["route", "ci"]);
 });

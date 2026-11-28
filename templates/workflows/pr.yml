@@ -17,3 +17,8 @@ permissions:
 jobs:
   ci:
     uses: buildproveship/config/.github/workflows/reusable-ci.yml@<sha>
+    # Lets the routing job see whether the local runner is idle. Without them CI skips the local runner. Org-level
+    # secrets from a read-only GitHub App; the token it mints lives for one job.
+    secrets:
+      runner-router-client-id: ${{ secrets.RUNNER_ROUTER_CLIENT_ID }}
+      runner-router-private-key: ${{ secrets.RUNNER_ROUTER_PRIVATE_KEY }}

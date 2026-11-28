@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.7.0 (2026-11-28)
+
+Cheapest-runner routing for the shared CI (RRDPLAT-114).
+
+- `reusable-ci.yml` gains a short `route` job. With the new default `runner: auto` it sends `ci` to GitHub-hosted `ubuntu-24.04` for public repos and fork PRs, otherwise to the self-hosted `rr-local` runner when it is online and idle, otherwise to the new `spot-runner` label if the caller sets one, otherwise to `ubuntu-24.04`. GitHub does not fall back between labels, so the job asks the API first. Any other `runner` value is used as given. `ci / ci` keeps its name; drafts still skip it.
+- Runner status is read with a short-lived token from a read-only GitHub App (new optional secrets `runner-router-client-id` and `runner-router-private-key`, passed by the caller template). Without them the Mac is skipped, never guessed. No repo or organisation name is written in the workflow.
+- Behaviour change for consumers: the default is no longer a fixed `rr-local`; a consumer that passed `runner:` explicitly is unchanged. The spot runner itself (AWS) is set up separately and only used when `spot-runner` is set.
+- `infra/ci-runners/` holds the Terraform config for the spot runner (github-aws-runners module, pinned): at most 2 instances, spot only, ephemeral, no NAT gateway. Not applied by CI; the account owner applies it.
+- No ESLint or guardrails rule changes.
+
 ## 6.6.0 (2026-11-27)
 
 Merge-queue ready CI (RRDPLAT-114).

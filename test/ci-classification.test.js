@@ -104,8 +104,8 @@ test("the single ci job runs the same classifier script as the shared classify w
   assert.deepEqual(step.env, classifier.jobs.classify.steps[0].env);
 });
 
-test("ci is one job: classification first, then every check step is skipped for docs-only changes", () => {
-  assert.deepEqual(Object.keys(ci.jobs), ["ci"]);
+test("ci follows one short route job: classification first, then every check step is skipped for docs-only changes", () => {
+  assert.deepEqual(Object.keys(ci.jobs), ["route", "ci"]);
   const steps = ci.jobs.ci.steps;
   assert.equal(steps[0].id, "diff");
   const notDocs = "${{ steps.diff.outputs.docs_only != 'true' }}";

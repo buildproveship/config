@@ -112,7 +112,7 @@ test("other workflows retain their runner choices", () => {
     );
 });
 
-test("the caller pr.yml is the template and passes no runner: rr-local is the reusable default", () => {
+test("the caller pr.yml is the template and passes no runner: `auto` routing is the reusable default", () => {
   const pr = renderPr({ name: "x", private: true }, SHA);
   assert.match(pr, new RegExp(`reusable-ci.yml@${SHA}`));
   assert.doesNotMatch(pr, /runner:|<sha>|Copy to/);
@@ -190,8 +190,8 @@ test("the AGENTS.md note is added once and names ignore-scripts when the repo's 
   assert.ok(!again.changes.some((change) => change.path === "AGENTS.md"));
 });
 
-test("the PR body names the rr-local default and the fork exception", () => {
-  assert.match(prBody([]), /self-hosted `rr-local`.*forks.*ubuntu-24.04/);
+test("the PR body names the runner routing and the fork exception", () => {
+  assert.match(prBody([]), /`rr-local`.*spot runner.*forks.*ubuntu-24.04/);
 });
 
 test("a repo's extra scripts are added without replacing one it already has", () => {

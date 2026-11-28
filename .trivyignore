@@ -1,0 +1,5 @@
+# AWS-0104 (unrestricted egress) is accepted for the spot runner security group in infra/ci-runners and nowhere else.
+# Reason: the runners must reach github.com, the npm registry and AWS endpoints over HTTPS, and those IP ranges change,
+# so a CIDR allow-list would break CI. The group has no ingress rules at all. Reviewed with PR 81 (RRDPLAT-114);
+# revisit if the runners ever sit behind a proxy with an egress allow-list.
+AWS-0104
