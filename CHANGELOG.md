@@ -9,6 +9,7 @@ Cheapest-runner routing for the shared CI (RRDPLAT-114).
 - Behaviour change for consumers: the default is no longer a fixed `rr-local`; a consumer that passed `runner:` explicitly is unchanged. The spot runner itself (AWS) is set up separately and only used when `spot-runner` is set.
 - `infra/ci-runners/` holds the Terraform config for the spot runner (github-aws-runners module, pinned): at most 2 instances, spot only, ephemeral, no NAT gateway. Not applied by CI; the account owner applies it. A budget action (`budget.tf`) is the hard ceiling: US$20 a month, then new launches are denied, and an EventBridge schedule lifts the block at 00:05 UTC on the 1st of each month.
 - The scale-up Lambda reserves no concurrency (`scale_up_reserved_concurrent_executions = -1`): a new AWS account allows 10 concurrent executions and requires 5 unreserved, so reserving 1 failed the first apply. The 2-instance cap stays in `runners_maximum_count`.
+- The spot runner image gets `gh` and `jq` at boot (`userdata_post_install`): the first spot run failed with exit 127 because Amazon Linux does not ship `gh`, which the changed-files classifier uses. `gh` comes from GitHub's signed dnf repository.
 - No ESLint or guardrails rule changes.
 
 ## 6.6.0 (2026-11-27)

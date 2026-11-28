@@ -21,6 +21,13 @@ test("the scale-up lambda reserves no concurrency, which a new AWS account canno
   assert.match(main, /scale_up_reserved_concurrent_executions\s*=\s*-1\b/);
 });
 
+test("the runner image gets gh and jq, which the shared CI uses and Amazon Linux does not ship", () => {
+  assert.match(main, /userdata_post_install\s*=\s*<<-EOT/);
+  assert.match(main, /dnf install -y[^\n]*\bjq\b/);
+  assert.match(main, /dnf install -y[^\n]*\bgh\b/);
+  assert.match(main, /set -euo pipefail/);
+});
+
 test("runners are spot, ephemeral and idle-free", () => {
   assert.match(main, /instance_target_capacity_type\s*=\s*"spot"/);
   assert.match(main, /enable_ephemeral_runners\s*=\s*true/);
