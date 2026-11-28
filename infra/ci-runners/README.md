@@ -15,7 +15,7 @@ all month is a few tens of dollars.
    "Self-hosted runners: read and write", repository permissions "Actions: read", "Metadata: read" and "Checks: read" as
    listed in the module's setup docs; subscribe to the "Workflow job" event; generate a webhook secret and a private key.
 2. `export TF_VAR_github_app='{"id":"<app id>","key_base64":"<base64 of the .pem>","webhook_secret":"<secret>"}'`
-3. `terraform init && terraform plan`, read the plan, then `terraform apply`.
+3. `terraform init`, then `terraform apply -target=module.lambdas` (downloads the three lambda zips from the module's release; a plan needs them to exist), then `terraform plan`, read the plan, then `terraform apply`. A fresh-checkout plan reports about 99 resources, none of them a NAT gateway, load balancer or KMS key.
 4. Put the `webhook_endpoint` output into the App's webhook URL, install the App on the org's private repos.
 5. Callers set `spot-runner: ci-spot` in their `pr.yml` (or the org does it once in the template).
 
