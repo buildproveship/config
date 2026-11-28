@@ -1,6 +1,7 @@
 # Ephemeral AWS spot runners for the shared CI (RRDPLAT-114). Scales to zero: a queued job starts one instance, which
 # takes that one job and is terminated. Cost controls, all enforced here:
-#   - at most var.max_runners instances at once (2): AWS budget alerts do not stop spending
+#   - at most var.max_runners instances at once (2) and a spot price cap of US$0.05 an hour each
+#   - a hard monthly budget action (budget.tf): at the ceiling, new launches are denied
 #   - spot only, ephemeral (one job per instance), no idle runners
 #   - the default VPC's public subnets with no inbound rules: no NAT gateway, which is the usual hidden monthly cost
 #   - 7-day log retention
@@ -50,6 +51,7 @@ module "runners" {
   instance_target_capacity_type = "spot"
   instance_allocation_strategy  = "price-capacity-optimized"
   instance_types                = var.instance_types
+  instance_max_spot_price       = "0.05"
   runners_maximum_count         = var.max_runners
 
   associate_public_ipv4_address   = true
