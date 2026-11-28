@@ -2,9 +2,9 @@
 //
 //   // eslint.config.js
 //   import { defineConfig } from "eslint/config";
-//   import { releaseready } from "@buildproveship/config/eslint";
+//   import { buildproveship } from "@buildproveship/config/eslint";
 //   export default defineConfig(
-//     releaseready({ tsconfigRootDir: import.meta.dirname, react: true }),
+//     buildproveship({ tsconfigRootDir: import.meta.dirname, react: true }),
 //     { ignores: ["generated/**"] }, // repo-specific additions, each with a reason
 //   );
 //
@@ -147,7 +147,7 @@ export const suppressionRules = {
 };
 
 /**
- * @typedef {object} ReleasereadyOptions
+ * @typedef {object} BuildproveshipOptions
  * @property {string} tsconfigRootDir Directory the TypeScript project service resolves tsconfig files from
  *   (pass `import.meta.dirname`).
  * @property {boolean} [react] Add the React presets (react, react-hooks, jsx-a11y) and browser globals.
@@ -161,13 +161,13 @@ export const suppressionRules = {
 /**
  * The shared configuration as a list of flat-config objects.
  *
- * @param {ReleasereadyOptions} options
+ * @param {BuildproveshipOptions} options
  * @returns {import("eslint").Linter.Config[]}
  */
-export function releaseready(options) {
+export function buildproveship(options) {
   if (!options || typeof options.tsconfigRootDir !== "string") {
     throw new TypeError(
-      "releaseready(): pass { tsconfigRootDir: import.meta.dirname }",
+      "buildproveship(): pass { tsconfigRootDir: import.meta.dirname }",
     );
   }
   const {
@@ -186,9 +186,9 @@ export function releaseready(options) {
       };
 
   return defineConfig(
-    { name: "releaseready/ignores", ignores: defaultIgnores },
+    { name: "buildproveship/ignores", ignores: defaultIgnores },
     {
-      name: "releaseready/base",
+      name: "buildproveship/base",
       files: [...jsFiles, ...tsFiles],
       extends: [js.configs.recommended],
       linterOptions: {
@@ -203,12 +203,12 @@ export function releaseready(options) {
       rules: { "no-unused-vars": ["error", unusedVars] },
     },
     {
-      name: "releaseready/commonjs",
+      name: "buildproveship/commonjs",
       files: ["**/*.cjs", "**/*.cts"],
       languageOptions: { sourceType: "commonjs" },
     },
     {
-      name: "releaseready/typescript",
+      name: "buildproveship/typescript",
       files: tsFiles,
       extends: [
         tseslint.configs.strictTypeChecked,
@@ -220,7 +220,7 @@ export function releaseready(options) {
       rules: sharedTypeScriptRules,
     },
     {
-      name: "releaseready/suppressions",
+      name: "buildproveship/suppressions",
       files: [...jsFiles, ...tsFiles],
       extends: [eslintComments.recommended],
       plugins: {
@@ -232,7 +232,7 @@ export function releaseready(options) {
     react
       ? [
           {
-            name: "releaseready/react",
+            name: "buildproveship/react",
             files: [...jsxFiles, ...tsFiles, ...jsFiles],
             extends: [
               reactHooks.configs.flat["recommended-latest"],
@@ -240,19 +240,19 @@ export function releaseready(options) {
             ],
           },
           {
-            name: "releaseready/react-javascript",
+            name: "buildproveship/react-javascript",
             files: jsFiles,
             extends: [eslintReact.configs.recommended],
           },
           {
-            name: "releaseready/react-typescript",
+            name: "buildproveship/react-typescript",
             files: tsFiles,
             extends: [eslintReact.configs["recommended-type-checked"]],
           },
           {
             // eslint-plugin-react-hooks (the React team's rules) owns the hooks rules, so @eslint-react's
             // same-named copies are turned off. The list comes from @eslint-react's own conflict map.
-            name: "releaseready/react-hooks-owner",
+            name: "buildproveship/react-hooks-owner",
             files: [...jsFiles, ...tsFiles],
             rules: reactHooksDuplicates,
           },

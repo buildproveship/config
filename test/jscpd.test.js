@@ -64,7 +64,7 @@ describe("jscpd duplication limit", () => {
       {
         "src/api/a.ts": `${copied}\n`,
         "src/api/b.ts": `${copied}\n`,
-        "releaseready-guardrails.json": JSON.stringify({
+        "buildproveship-guardrails.json": JSON.stringify({
           fileLength: {
             generated: [
               {

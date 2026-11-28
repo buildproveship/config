@@ -1,6 +1,6 @@
 // The buildproveship-code-quality skill ships in this package; every repo keeps a byte-identical copy at
 // skills/buildproveship-code-quality/ plus a .claude/skills loader stub, and names it in AGENTS.md and CLAUDE.md.
-// `releaseready-guardrails sync` writes the copy; the `skill-drift` rule fails when it differs.
+// `buildproveship-guardrails sync` writes the copy; the `skill-drift` rule fails when it differs.
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -42,7 +42,7 @@ description: ${description}
 
 This is a loader stub. The skill lives at \`${skillDir}/SKILL.md\` (from the repo root), copied from
 \`@buildproveship/config\`. Read that file and its \`references/\` and follow them. Never edit the copy here or there:
-change it in the config repo and run \`npx releaseready-guardrails sync\`.
+change it in the config repo and run \`npx buildproveship-guardrails sync\`.
 `;
 }
 
@@ -94,8 +94,8 @@ export async function skillDrift(repo) {
         path,
         line: 0,
         message: present.has(path)
-          ? "differs from the skill published in @buildproveship/config: run `npx releaseready-guardrails sync`"
-          : "missing: run `npx releaseready-guardrails sync`",
+          ? "differs from the skill published in @buildproveship/config: run `npx buildproveship-guardrails sync`"
+          : "missing: run `npx buildproveship-guardrails sync`",
       });
     }
   }
@@ -106,7 +106,7 @@ export async function skillDrift(repo) {
         path,
         line: 0,
         message:
-          "not in the published skill: change the skill in the config repo, then run `npx releaseready-guardrails sync`",
+          "not in the published skill: change the skill in the config repo, then run `npx buildproveship-guardrails sync`",
       });
     }
   }
@@ -115,7 +115,7 @@ export async function skillDrift(repo) {
       rule: "skill-drift",
       path: `${oldSkillDir}/SKILL.md`,
       line: 0,
-      message: `renamed to ${skillDir}: run \`npx releaseready-guardrails sync\` to remove the old copy`,
+      message: `renamed to ${skillDir}: run \`npx buildproveship-guardrails sync\` to remove the old copy`,
     });
   }
   for (const doc of ["AGENTS.md", "CLAUDE.md"]) {

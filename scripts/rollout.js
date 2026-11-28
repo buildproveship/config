@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // `--task delivery-rules` instead adds the shared AGENTS.md delivery-rules section (RRDPLAT-103).
-// Rolls the shared Husky hooks and lean CI (RRDPLAT-104) out to every releaseready repo: one deterministic plan per
+// Rolls the shared Husky hooks and lean CI (RRDPLAT-104) out to every BuildProveShip repo: one deterministic plan per
 // repo, a dry run that lists it, and an apply step that opens one draft PR per repo (RRDPLAT-105).
 //   node scripts/rollout.js --dry-run [--repo <name>]...
 //   node scripts/rollout.js --apply --repo <name>
 // Reuses: node:util.parseArgs (flags), `gh` (clone credentials, the release sha, the draft PR), `npm` (lockfile and
-// install) and `releaseready-hooks install` (writes .husky/). Nothing here parses YAML: the workflow templates are
+// install) and `buildproveship-hooks install` (writes .husky/). Nothing here parses YAML: the workflow templates are
 // copied as text so their comments survive.
 import { execFileSync } from "node:child_process";
 import {
@@ -33,7 +33,7 @@ const CONFIG_ROOT = fileURLToPath(new URL("../", import.meta.url));
 const BRANCH = "RRDPLAT-105-shared-hooks-and-ci";
 const DELIVERY_BRANCH = "RRDPLAT-103-delivery-rules";
 const AGENTS_MARKER = "## Local hooks and CI";
-const INSTALL_HOOKS = ["--no-install", "releaseready-hooks", "install"];
+const INSTALL_HOOKS = ["--no-install", "buildproveship-hooks", "install"];
 
 /**
  * @typedef {{ name: string, private: boolean, checkCommand?: string, scripts?: Record<string, string>, skip?: string }} Repo
@@ -77,7 +77,7 @@ export function renderPr(repo, sha) {
  */
 export function renderCopilotSetup(sha) {
   return (
-    "# Runs before the Copilot coding agent starts, so it can run `npx releaseready-hooks verify` and its commit hooks.\n" +
+    "# Runs before the Copilot coding agent starts, so it can run `npx buildproveship-hooks verify` and its commit hooks.\n" +
     template("templates/copilot-setup-steps.yml")
       .replace(/^(#.*\n)+/, "")
       .replace(/(install-gitleaks@)[a-f0-9]{40}/, `$1${sha}`)
@@ -92,9 +92,9 @@ function agentsNote(repo, ignoreScripts) {
   const lines = [
     AGENTS_MARKER,
     "",
-    "- Husky runs the shared hooks from `@buildproveship/config` (`releaseready-hooks`): pre-commit (lint-staged, gitleaks), commit-msg (Jira key) and pre-push (never `main`, rebased, type-check, affected tests). Never use `--no-verify` or `HUSKY=0`.",
+    "- Husky runs the shared hooks from `@buildproveship/config` (`buildproveship-hooks`): pre-commit (lint-staged, gitleaks), commit-msg (Jira key) and pre-push (never `main`, rebased, type-check, affected tests). Never use `--no-verify` or `HUSKY=0`.",
     ignoreScripts
-      ? "- `.npmrc` sets `ignore-scripts=true`, so `prepare` does not run on `npm install`: run `npx releaseready-hooks install` once per clone."
+      ? "- `.npmrc` sets `ignore-scripts=true`, so `prepare` does not run on `npm install`: run `npx buildproveship-hooks install` once per clone."
       : "- `npm install` installs the hooks through the `prepare` script.",
     `- CI is one required check, \`ci\`, from the reusable workflow in \`buildproveship/config\`; it runs \`${repo.checkCommand ?? "npm run check"}\`. Run the same command locally before you push.`,
     "- Workflows run on the self-hosted `rr-local` runner, the reusable workflow's default.",
@@ -210,7 +210,7 @@ export function planRepo(dir, repo, sha) {
     warnings.push(
       "@buildproveship/config is also in dependencies; left as is, remove one",
     );
-  const prepare = "releaseready-hooks install";
+  const prepare = "buildproveship-hooks install";
   pkg.scripts ??= {};
   if (pkg.scripts.prepare && pkg.scripts.prepare !== prepare)
     warnings.push(
@@ -222,7 +222,7 @@ export function planRepo(dir, repo, sha) {
     pkg.scripts[name] ??= command;
   if (!pkg.scripts.check && !repo.checkCommand)
     warnings.push(
-      "no `check` script and no checkCommand in rollout-repos.json: `releaseready-hooks verify` would fail",
+      "no `check` script and no checkCommand in rollout-repos.json: `buildproveship-hooks verify` would fail",
     );
   put("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
 

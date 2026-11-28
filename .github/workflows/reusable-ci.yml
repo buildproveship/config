@@ -38,7 +38,7 @@ on:
       check-command:
         description: The one required check; the same command developers run as `npm run check`.
         type: string
-        default: npx --no-install releaseready-hooks verify
+        default: npx --no-install buildproveship-hooks verify
       docs-only-pattern:
         description: Extended regex; a PR whose changed files all match it skips the checks.
         type: string

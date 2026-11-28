@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// releaseready-guardrails: the mechanical half of the buildproveship-code-quality skill.
+// buildproveship-guardrails: the mechanical half of the buildproveship-code-quality skill.
 //
-//   releaseready-guardrails            run every check from the repo root (what pr.yml runs)
-//   releaseready-guardrails --static   only the fast file rules (no knip, no jscpd)
-//   releaseready-guardrails sync       write the published skill and its .claude stub into this repo
-//   releaseready-guardrails baseline   print allow entries (with `max`, empty reasons) for today's findings
+//   buildproveship-guardrails            run every check from the repo root (what pr.yml runs)
+//   buildproveship-guardrails --static   only the fast file rules (no knip, no jscpd)
+//   buildproveship-guardrails sync       write the published skill and its .claude stub into this repo
+//   buildproveship-guardrails baseline   print allow entries (with `max`, empty reasons) for today's findings
 import { parseArgs } from "node:util";
 import { baseline, check, findAll } from "./index.js";
 import { syncSkill } from "./skill.js";

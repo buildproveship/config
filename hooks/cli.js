@@ -8,7 +8,7 @@ import { prePush } from "./pre-push.js";
 import { verifyClean } from "./verify-clean.js";
 import { capture } from "./run.js";
 
-const USAGE = `releaseready-hooks <command>
+const USAGE = `buildproveship-hooks <command>
 
   install               set up Husky and the three shared hooks (use as the "prepare" script)
   pre-commit            lint-staged, then gitleaks on the staged diff

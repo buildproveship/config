@@ -98,8 +98,8 @@ test("the plan sets the dependency and prepare script, and reports hook generati
   );
   assert.equal(pkg.devDependencies["@buildproveship/config"], "^5.2.0");
   assert.equal(pkg.devDependencies.zod, "^4.0.0");
-  assert.equal(pkg.scripts.prepare, "releaseready-hooks install");
-  assert.deepEqual(actions, ["npx --no-install releaseready-hooks install"]);
+  assert.equal(pkg.scripts.prepare, "buildproveship-hooks install");
+  assert.deepEqual(actions, ["npx --no-install buildproveship-hooks install"]);
   assert.ok(!changes.some((change) => change.path.startsWith(".husky/")));
 });
 
@@ -181,7 +181,7 @@ test("the AGENTS.md note is added once and names ignore-scripts when the repo's 
   const first = planRepo(repoDir(files), repo, SHA).changes.find(
     (change) => change.path === "AGENTS.md",
   );
-  assert.match(first?.after ?? "", /npx releaseready-hooks install/);
+  assert.match(first?.after ?? "", /npx buildproveship-hooks install/);
   const again = planRepo(
     repoDir({ ...files, "AGENTS.md": first?.after ?? "" }),
     repo,

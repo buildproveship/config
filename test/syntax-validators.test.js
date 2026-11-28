@@ -67,7 +67,7 @@ test("CLI recognizes multiline skipped calls/options without increasing same-lin
   assert.match(blocked.stdout, /sample.test.ts:5 {2}skipped-test/);
   const allowed = await check({
     "sample.test.ts": 'test.skip("x", { skip: true }, () => {});\n',
-    "releaseready-guardrails.json": JSON.stringify({
+    "buildproveship-guardrails.json": JSON.stringify({
       allow: [
         {
           rule: "skipped-test",

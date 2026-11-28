@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "releaseready-guardrails.json",
-  "description": "Repo settings for releaseready-guardrails. Every exception carries a reason a reviewer can check.",
+  "title": "buildproveship-guardrails.json",
+  "description": "Repo settings for buildproveship-guardrails. Every exception carries a reason a reviewer can check.",
   "type": "object",
   "additionalProperties": false,
   "definitions": {

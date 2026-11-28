@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "releaseready shared Renovate preset. Use it with: { \"extends\": [\"github>buildproveship/config\"] }",
+  "description": "buildproveship shared Renovate preset. Use it with: { \"extends\": [\"github>buildproveship/config\"] }",
   "extends": [
     "config:recommended",
     ":semanticCommitsDisabled",

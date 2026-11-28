@@ -1,6 +1,6 @@
 // Fails on GitHub Actions patterns that burn paid minutes (RRDPLAT-114). The org cap is US$10/month, so a workflow
 // that runs often, runs long or runs on a multiplied runner must be moved to the self-hosted `rr-local` runner or
-// removed. Used by `npm run check:workflow-cost` and by consumers through `releaseready-hooks`-style scripts.
+// removed. Used by `npm run check:workflow-cost` and by consumers through `buildproveship-hooks`-style scripts.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";

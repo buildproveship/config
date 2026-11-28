@@ -5,4 +5,4 @@ description: Code-quality rules for every change in any BuildProveShip repo (bui
 
 This is a loader stub. The skill lives at `skills/buildproveship-code-quality/SKILL.md` (from the repo root), copied from
 `@buildproveship/config`. Read that file and its `references/` and follow them. Never edit the copy here or there:
-change it in the config repo and run `npx releaseready-guardrails sync`.
+change it in the config repo and run `npx buildproveship-guardrails sync`.

@@ -5,7 +5,7 @@
 #   .trivyignore              trivy ids with a reason comment on the line above
 #   inline `nosemgrep: <rule-id> -- reason` comments for accepted semgrep findings
 #   .github/zizmor.yml        zizmor rule config (ignores need a reason comment)
-name: releaseready security scan
+name: buildproveship security scan
 description: Run gitleaks, trivy fs, semgrep and zizmor on Linux x64 or macOS arm64. Fails on any finding not in the repo's baseline.
 runs:
   using: composite

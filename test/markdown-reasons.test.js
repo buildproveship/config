@@ -93,12 +93,12 @@ test("CLI validates unpadded reasons for every exception setting", () => {
         "allow" in config ? "ReleaseReady\n" : "BuildProveShip\n",
       );
       writeFileSync(
-        join(root, "releaseready-guardrails.json"),
+        join(root, "buildproveship-guardrails.json"),
         JSON.stringify(config),
       );
       const result = run();
       assert.equal(result.status, valid ? 0 : 1, result.stderr + result.stdout);
-      if (!valid) assert.match(result.stderr, /releaseready-guardrails.json/);
+      if (!valid) assert.match(result.stderr, /buildproveship-guardrails.json/);
     }
   }
 });
@@ -113,7 +113,7 @@ test("CLI rejects leading-whitespace placeholders where the schema already forbi
       { fileLength: { generated: [{ path: "generated/**", reason }] } },
     ]) {
       writeFileSync(
-        join(root, "releaseready-guardrails.json"),
+        join(root, "buildproveship-guardrails.json"),
         JSON.stringify(config),
       );
       const result = run();

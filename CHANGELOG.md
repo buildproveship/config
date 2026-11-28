@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 7.0.0 (2026-11-28)
+
+Breaking: the shared tools drop the ReleaseReady name. No aliases are kept; every consumer updates in the same rollout.
+
+- Commands: `releaseready-guardrails` is now `buildproveship-guardrails`, `releaseready-hooks` is now `buildproveship-hooks`.
+- Config file: `releaseready-guardrails.json` is now `buildproveship-guardrails.json`.
+- ESLint: the `releaseready()` helper is now `buildproveship()` and its config names use the `buildproveship/` prefix.
+- The duplicate `releaseready-code-quality` skill copy is removed; `buildproveship-code-quality` is the only one.
+- Includes the two guardrails below (RRDSCRUM-437).
+
 Two guardrails for the Nov 2026 defect classes (RRDSCRUM-437).
 
 - `hand-written-xml-parser`: a regex over tag text (`<tag[^>]*>(.*?)</tag>`, in a literal or a `RegExp` string) in source. Use a maintained XML parser. Allowlistable with a reason.
