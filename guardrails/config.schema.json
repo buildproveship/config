@@ -45,6 +45,8 @@
               "hand-written-archive-parser",
               "copied-wcag-contrast",
               "legacy-marker",
+              "hand-written-xml-parser",
+              "legacy-path-name",
               "skipped-test",
               "runtime-assert",
               "hardcoded-tmp",
@@ -63,6 +65,19 @@
           "path": { "type": "string", "minLength": 1 },
           "match": { "type": "string", "minLength": 3 },
           "max": { "type": "integer", "minimum": 1 },
+          "reason": { "$ref": "#/definitions/specificReason" }
+        }
+      }
+    },
+    "contractPaths": {
+      "description": "Published contract folders that keep v1 in their path (schema/v1, canonical/v1). legacy-path-name skips them; every entry names why.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "reason"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
           "reason": { "$ref": "#/definitions/specificReason" }
         }
       }

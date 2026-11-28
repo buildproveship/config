@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+Two guardrails for the Nov 2026 defect classes (RRDSCRUM-437).
+
+- `hand-written-xml-parser`: a regex over tag text (`<tag[^>]*>(.*?)</tag>`, in a literal or a `RegExp` string) in source. Use a maintained XML parser. Allowlistable with a reason.
+- `legacy-path-name`: a tracked file or folder named `v1`, `legacy` or `compat` (whole word). Generated sources and the new `contractPaths` setting (published contract folders such as `schema/v1`, each with a reason) are exempt.
+- Both are error-level rules; the release that ships them is a minor or major per the release policy. No existing rule changes.
+
 ## 6.7.0 (2026-11-28)
 
 Cheapest-runner routing for the shared CI (RRDPLAT-114).

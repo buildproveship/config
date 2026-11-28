@@ -672,6 +672,53 @@ function legacyMarkers(repo) {
 }
 
 /**
+ * Nov 2026 review: hand-written XML parsers (a regex over tag text) break on attributes, entities, CDATA and nesting.
+ * A tag-shaped pattern with a negated-`>` class or a lazy wildcard is the signature; use a maintained parser.
+ *
+ * @type {Rule}
+ */
+function handWrittenXmlParser(repo) {
+  return scanLines(repo, sourceGlob, [
+    {
+      rule: "hand-written-xml-parser",
+      pattern:
+        /(?:\/|RegExp\(\s*["'`])[^\n]*<\\?\/?[A-Za-z:_\\([][^\n]*(?:\[\^>\]|\.\*\?|\[\\s\\S\]\*?\??)[^\n]*(?:>|\\?\/)/,
+      message:
+        "regex-built XML parsing: use a maintained parser such as fast-xml-parser or sax",
+    },
+  ]);
+}
+
+/** Path segments that name old versions or compatibility code: `v1`, `legacy`, `compat` as a whole word. */
+const legacyPathSegment = /(?:^|[._-])(?:v1|legacy|compat)(?:[._-]|$)/i;
+
+/**
+ * Nov 2026 review: kept `v1`/`legacy`/`compat` files and folders hold the old path next to the new one. Generated
+ * sources and the repo's `contractPaths` (published contract versions that keep `v1` in their import path) are exempt.
+ *
+ * @type {Rule}
+ */
+function legacyPathNames(repo, config) {
+  const exempt = [
+    ...generatedGlobs(config),
+    ...(config.contractPaths ?? []).map((entry) => entry.path),
+  ];
+  return repo.paths
+    .filter(
+      (path) =>
+        !matches(path, [...alwaysExcluded, ...skillCopies, ...exempt]) &&
+        path.split("/").some((segment) => legacyPathSegment.test(segment)),
+    )
+    .map((path) => ({
+      rule: "legacy-path-name",
+      path,
+      line: 0,
+      message:
+        "file or folder named v1/legacy/compat: delete the old path, or list a published contract folder in contractPaths (with a reason)",
+    }));
+}
+
+/**
  * Standard 2: skipped tests hide failures. Focused (.only) tests are caught by ESLint (no-only-tests).
  *
  * @type {Rule}
@@ -975,6 +1022,8 @@ export const rules = [
   buildInDependency,
   copiedCode,
   legacyMarkers,
+  handWrittenXmlParser,
+  legacyPathNames,
   scannerPatterns,
   suppressionsAndArgv,
   skippedTests,

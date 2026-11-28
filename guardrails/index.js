@@ -31,6 +31,7 @@ const jscpdFormats = "javascript,typescript,jsx,tsx,python";
  * @property {{ threshold?: number; paths?: string[] }} [jscpd]
  * @property {{ enabled?: boolean; reason?: string; args?: string[] }} [knip]
  * @property {{ paths?: string[] }} [designSystem]
+ * @property {{ path: string; reason: string }[]} [contractPaths]
  * @property {{ maxLines?: number; reason?: string; generated?: { path: string; reason: string }[] }} [fileLength]
  */
 
