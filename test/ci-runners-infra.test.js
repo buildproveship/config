@@ -69,3 +69,41 @@ test("a hard budget ceiling of at most 20 USD stops new launches", () => {
   assert.match(budget, /"ec2:RunInstances", "ec2:CreateFleet"/);
   assert.match(main, /instance_max_spot_price\s*=\s*"0\.05"/);
 });
+
+test("the IAM attach permission is scoped to one role and one policy, and the semgrep exception names its rules and a reason", () => {
+  const budget = readFileSync(
+    new URL("../infra/ci-runners/budget.tf", import.meta.url),
+    "utf8",
+  );
+  const lines = budget.split("\n");
+  const at = lines.findIndex((l) => l.includes('"iam:AttachRolePolicy"'));
+  assert.ok(at > 0);
+  const comment = lines[at - 1];
+  assert.match(
+    comment,
+    /nosemgrep: .*no-iam-priv-esc-funcs.*no-iam-resource-exposure.* -- \S/,
+  );
+  assert.equal((budget.match(/nosemgrep/g) ?? []).length, 1);
+  assert.match(
+    budget,
+    /Resource\s*=\s*module\.runners\.runners\.role_scale_up\.arn/,
+  );
+  assert.match(
+    budget,
+    /"iam:PolicyARN"\s*=\s*aws_iam_policy\.stop_launches\.arn/,
+  );
+});
+
+test("budget alerts take a list of addresses and no address is committed", () => {
+  const budget = readFileSync(
+    new URL("../infra/ci-runners/budget.tf", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    budget,
+    /variable "alert_emails"[\s\S]*?type\s*=\s*list\(string\)/,
+  );
+  assert.match(budget, /subscriber_email_addresses\s*=\s*var\.alert_emails/);
+  assert.match(budget, /for_each\s*=\s*var\.alert_emails/);
+  assert.doesNotMatch(budget, /[\w.+-]+@[\w-]+\.\w+/);
+});

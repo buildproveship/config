@@ -15,9 +15,13 @@ variable "monthly_ceiling_usd" {
   }
 }
 
-variable "alert_email" {
-  description = "Where budget alerts go (US$5, 10 and 15 of actual spend, and the ceiling). Pass through TF_VAR_alert_email, never commit."
-  type        = string
+variable "alert_emails" {
+  description = "Where budget alerts go (US$5, 10 and 15 of actual spend, and the ceiling), one or more addresses. Pass as JSON through TF_VAR_alert_emails, never commit."
+  type        = list(string)
+  validation {
+    condition     = length(var.alert_emails) >= 1 && length(var.alert_emails) <= 10
+    error_message = "Give between 1 and 10 alert addresses."
+  }
 }
 
 variable "budget_tag_active" {
@@ -57,6 +61,7 @@ resource "aws_iam_role_policy" "budget_action" {
     Version = "2012-10-17"
     Statement = [{
       Effect   = "Allow"
+      # nosemgrep: terraform.lang.security.iam.no-iam-priv-esc-funcs.no-iam-priv-esc-funcs, terraform.lang.security.iam.no-iam-resource-exposure.no-iam-resource-exposure -- the budget action must attach one deny-launch policy to the scale-up role; it is limited to that role and that policy ARN
       Action   = ["iam:AttachRolePolicy", "iam:DetachRolePolicy"]
       Resource = module.runners.runners.role_scale_up.arn
       Condition = {
@@ -88,7 +93,7 @@ resource "aws_budgets_budget" "ci_spot" {
       threshold                  = notification.value
       threshold_type             = "ABSOLUTE_VALUE"
       notification_type          = "ACTUAL"
-      subscriber_email_addresses = [var.alert_email]
+      subscriber_email_addresses = var.alert_emails
     }
   }
 }
@@ -112,8 +117,11 @@ resource "aws_budgets_budget_action" "stop_launches" {
     }
   }
 
-  subscriber {
-    subscription_type = "EMAIL"
-    address           = var.alert_email
+  dynamic "subscriber" {
+    for_each = var.alert_emails
+    content {
+      subscription_type = "EMAIL"
+      address           = subscriber.value
+    }
   }
 }
