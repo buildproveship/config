@@ -36,3 +36,22 @@ test("the module and its lambda zips are pinned to one release", () => {
   assert.equal(pins.length, 5);
   assert.equal(new Set(pins).size, 1);
 });
+
+test("the only trivy exception is the runner egress finding, and it carries a reason", () => {
+  const lines = readFileSync(
+    new URL("../.trivyignore", import.meta.url),
+    "utf8",
+  )
+    .split("\n")
+    .filter((line) => line.trim() !== "");
+  assert.deepEqual(
+    lines.filter((line) => !line.startsWith("#")),
+    ["AWS-0104"],
+  );
+  assert.ok(
+    lines
+      .filter((line) => line.startsWith("#"))
+      .join(" ")
+      .includes("Reason:"),
+  );
+});
