@@ -5,7 +5,7 @@ description: Code-quality rules for every change in any BuildProveShip repo (bui
 
 # BuildProveShip code quality
 
-The 18 Nov 2026 review of nine repos found 191 defects (`_review/findings/<repo>.md`, IDs such as `RR-05` or `TM-06`).
+The 18 Nov 2026 review of nine repos found 191 defects ([findings record](https://github.com/pamirascent/code-governance/tree/main/docs/findings), IDs such as `RR-05` or `TM-06`).
 Most came from four habits: **keeping old code "just in case", writing a helper instead of using a library, copying
 code from another repo instead of importing it, and turning a check off to go green.** Each rule below names the
 findings it prevents. `buildproveship-guardrails` (from `@buildproveship/config`) enforces the mechanical part in every

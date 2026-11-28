@@ -3,7 +3,8 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-// The GitHub org and npm scope are buildproveship. History lives in CHANGELOG.md and docs/history/.
+// The GitHub org and npm scope are buildproveship. History lives in CHANGELOG.md, docs/history/ and docs/findings/
+// (the review notes keep the names the repos had when they were reviewed).
 // `git grep` (tracked files only) is the platform tool for this; no library needed.
 const OLD_SCOPE = ["@release", "ready"].join("");
 
@@ -20,6 +21,7 @@ test("no tracked file refers to the old npm scope outside history docs", () => {
       ".",
       ":!CHANGELOG.md",
       ":!docs/history",
+      ":!docs/findings",
     ],
     { encoding: "utf8" },
   );
