@@ -9,7 +9,7 @@ Cost controls, tightest first:
 - **Hard ceiling: US$20 a month** (`budget.tf`). At 100% of the budget an AWS Budgets action attaches a deny-launch policy to the
   scale-up role, so no new instance starts; alerts go to `alert_emails` at US$5, 10 and 15. Budget data refreshes a few times
   a day, so the worst case is about US$22 (the ceiling plus under half a day of two capped instances), plus roughly US$0.25 of
-  fixed cost. After a trip, detach the `*-budget-stop-launches` policy from the scale-up role to resume.
+  fixed cost. The policy is detached automatically at 00:05 UTC on the 1st of each month (a free EventBridge schedule); to resume sooner, detach the `*-budget-stop-launches` policy from the scale-up role.
 - At most 2 instances at once (`max_runners`, validated), a spot price cap of US$0.05 an hour each, cheapest 2 vCPU types
   first, one job per instance, no idle runners, 20-minute job timeout in the shared CI.
 - No NAT gateway (public subnets of the default VPC, no inbound rules), 7-day logs.

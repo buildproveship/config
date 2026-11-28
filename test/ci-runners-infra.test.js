@@ -83,7 +83,7 @@ test("the IAM attach permission is scoped to one role and one policy, and the se
     comment,
     /nosemgrep: .*no-iam-priv-esc-funcs.*no-iam-resource-exposure.* -- \S/,
   );
-  assert.equal((budget.match(/nosemgrep/g) ?? []).length, 1);
+  assert.equal((budget.match(/nosemgrep/g) ?? []).length, 2);
   assert.match(
     budget,
     /Resource\s*=\s*module\.runners\.runners\.role_scale_up\.arn/,
@@ -106,4 +106,23 @@ test("budget alerts take a list of addresses and no address is committed", () =>
   assert.match(budget, /subscriber_email_addresses\s*=\s*var\.alert_emails/);
   assert.match(budget, /for_each\s*=\s*var\.alert_emails/);
   assert.doesNotMatch(budget, /[\w.+-]+@[\w-]+\.\w+/);
+});
+
+test("the deny-launch policy is detached on the 1st of each month by a schedule limited to that role and policy", () => {
+  const budget = readFileSync(
+    new URL("../infra/ci-runners/budget.tf", import.meta.url),
+    "utf8",
+  );
+  assert.match(budget, /schedule_expression\s*=\s*"cron\(5 0 1 \* \? \*\)"/);
+  assert.match(budget, /aws-sdk:iam:detachRolePolicy/);
+  assert.match(budget, /maximum_retry_attempts\s*=\s*0/);
+  assert.match(budget, /Action\s*=\s*"iam:DetachRolePolicy"/);
+  assert.match(
+    budget,
+    /Principal = \{ Service = "scheduler\.amazonaws\.com" \}/,
+  );
+  assert.match(
+    budget,
+    /nosemgrep: terraform\.lang\.security\.iam\.no-iam-resource-exposure\.no-iam-resource-exposure -- \S[^\n]*\n\s*Action\s*=\s*"iam:DetachRolePolicy"/,
+  );
 });
