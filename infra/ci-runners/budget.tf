@@ -125,3 +125,55 @@ resource "aws_budgets_budget_action" "stop_launches" {
     }
   }
 }
+
+# Monthly reset: the budget restarts on the 1st (UTC), so the deny-launch policy is detached then. If it is not attached,
+# the call fails harmlessly (no retries); the schedule costs nothing.
+resource "aws_iam_role" "budget_reset" {
+  name = "${var.prefix}-budget-reset"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "scheduler.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "budget_reset" {
+  name = "detach-stop-launches"
+  role = aws_iam_role.budget_reset.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "iam:DetachRolePolicy"
+      Resource = module.runners.runners.role_scale_up.arn
+      Condition = {
+        ArnEquals = { "iam:PolicyARN" = aws_iam_policy.stop_launches.arn }
+      }
+    }]
+  })
+}
+
+resource "aws_scheduler_schedule" "budget_reset" {
+  name                         = "${var.prefix}-budget-reset"
+  schedule_expression          = "cron(5 0 1 * ? *)"
+  schedule_expression_timezone = "UTC"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  target {
+    arn      = "arn:aws:scheduler:::aws-sdk:iam:detachRolePolicy"
+    role_arn = aws_iam_role.budget_reset.arn
+    input = jsonencode({
+      RoleName  = module.runners.runners.role_scale_up.name
+      PolicyArn = aws_iam_policy.stop_launches.arn
+    })
+    retry_policy {
+      maximum_retry_attempts = 0
+    }
+  }
+}
