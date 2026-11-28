@@ -265,6 +265,49 @@ describe("releaseready-guardrails rules", () => {
     ]);
   });
 
+  test("hand-written-xml-parser: regex-built XML parsing fails, ordinary regexes and HTML strings pass", async () => {
+    const hits = await rulesHit({
+      "src/xml.ts":
+        'const tag = /<item[^>]*>([\\s\\S]*?)<\\/item>/g;\nconst attr = xml.match(/<([a-z]+)\\s[^>]*>(.*?)<\\/\\1>/);\nconst r = new RegExp("<row[^>]*>(.*?)</row>");\n',
+      "src/fine.ts":
+        'const html = "<div class=\\"a\\">hi</div>";\nconst word = /\\bitem\\b/;\nconst generic: Array<string> = [];\nconst id = /^[a-z]+$/;\n',
+    });
+    assert.deepEqual(hits.sort(), [
+      "hand-written-xml-parser src/xml.ts:1",
+      "hand-written-xml-parser src/xml.ts:2",
+      "hand-written-xml-parser src/xml.ts:3",
+    ]);
+  });
+
+  test("legacy-path-name: v1, legacy and compat in file or folder names fail outside generated and contract paths", async () => {
+    const hits = await rulesHit({
+      "src/legacy/reader.ts": "export const a = 1;\n",
+      "src/api-v1.ts": "export const b = 1;\n",
+      "src/compat.ts": "export const c = 1;\n",
+      "src/v1/routes.ts": "export const d = 1;\n",
+      "src/v10.ts": "export const e = 1;\n",
+      "src/invoice-compatible.ts": "export const f = 1;\n",
+      "src/generated/v1/api.ts": "export const g = 1;\n",
+      "src/contract/schema/v1/index.ts": "export const h = 1;\n",
+      "docs/history/legacy-notes.md": "# notes\n",
+      "releaseready-guardrails.json": JSON.stringify({
+        contractPaths: [
+          {
+            path: "src/contract/**",
+            reason: "Published contract versions keep v1 in their import path",
+          },
+        ],
+      }),
+    });
+    assert.deepEqual(hits.sort(), [
+      "legacy-path-name docs/history/legacy-notes.md:0",
+      "legacy-path-name src/api-v1.ts:0",
+      "legacy-path-name src/compat.ts:0",
+      "legacy-path-name src/legacy/reader.ts:0",
+      "legacy-path-name src/v1/routes.ts:0",
+    ]);
+  });
+
   test("UUID and digest regexes count only where test-management is a dependency", async () => {
     const source = {
       "src/ids.ts":
@@ -803,6 +846,9 @@ describe("allowlist", () => {
       { allow: [{ rule: "hardcoded-tmp", path: "src/tmp.ts" }] },
       { allow: [{ rule: "hardcoded-tmp", path: "src/tmp.ts", reason: "" }] },
       { allow: [{ rule: "oversized-source-file", path: "src/big.ts" }] },
+      { allow: [{ rule: "hand-written-xml-parser", path: "src/x.ts" }] },
+      { allow: [{ rule: "legacy-path-name", path: "src/v1/**", reason: "" }] },
+      { contractPaths: [{ path: "src/contract/**" }] },
       { fileLength: { maxLines: 1500 } },
       { fileLength: { generated: [{ path: "src/gen/**" }] } },
       {
@@ -915,10 +961,11 @@ describe("CLI", () => {
 
 describe("allowlist schema", () => {
   test("every rule the scanners emit can be allowlisted in releaseready-guardrails.json", () => {
-    const source = readFileSync(
-      new URL("../guardrails/rules.js", import.meta.url),
-      "utf8",
-    );
+    const source = ["rules.js", "old-code-rules.js"]
+      .map((file) =>
+        readFileSync(new URL(`../guardrails/${file}`, import.meta.url), "utf8"),
+      )
+      .join("\n");
     const emitted = new Set(
       [...source.matchAll(/\brule: "([a-z-]+)"/g)].map((m) => m[1]),
     );

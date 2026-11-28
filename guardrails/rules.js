@@ -30,7 +30,7 @@ import { commentsOf, severityLocations, skippedTestLines } from "./syntax.js";
 
 /** @typedef {(repo: RepoFiles, config: GuardrailsConfig) => Finding[]} Rule */
 
-const sourceGlob = "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs,py}";
+export const sourceGlob = "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs,py}";
 export const testGlobs = [
   "**/*.{test,spec}.{ts,tsx,mts,cts,js,jsx,mjs,cjs}",
   "**/{test,tests,__tests__,e2e}/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}",
@@ -73,7 +73,7 @@ export function matches(path, globs) {
  * @param {{ rule: string; pattern: RegExp; message: string }[]} patterns
  * @returns {Finding[]}
  */
-function scanLines(repo, globs, patterns) {
+export function scanLines(repo, globs, patterns) {
   /** @type {Finding[]} */
   const findings = [];
   for (const path of repo.paths.filter(
@@ -655,23 +655,6 @@ function suppressionsAndArgv(repo) {
 }
 
 /**
- * Standard 1: RR-03, RR-04, TM-11, TM-12, UPF-01, UPF-02, FUI-17. Deprecated, legacy and compatibility code.
- *
- * @type {Rule}
- */
-function legacyMarkers(repo) {
-  return scanLines(repo, sourceGlob, [
-    {
-      rule: "legacy-marker",
-      pattern:
-        /@deprecated\b|legacy|\bbackwards?[- _]?compat|\bcompat(?:ibility)?[ _-]?(?:layer|shim|mode|path|alias|code|wrapper|reader)\b|\bshims?\b|\bTODO:?\s*remove\b/i,
-      message:
-        "legacy/compatibility marker: delete the old code, or name its current consumer in an allowlist entry",
-    },
-  ]);
-}
-
-/**
  * Standard 2: skipped tests hide failures. Focused (.only) tests are caught by ESLint (no-only-tests).
  *
  * @type {Rule}
@@ -974,7 +957,6 @@ export const rules = [
   tsconfig,
   buildInDependency,
   copiedCode,
-  legacyMarkers,
   scannerPatterns,
   suppressionsAndArgv,
   skippedTests,
