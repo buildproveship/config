@@ -29,4 +29,4 @@ This is the owner's standing rule for every project. A project's own rules may a
 
 - Git hooks (Husky, from `@buildproveship/config`) check every commit and push: lint and secrets on commit, a Jira key (`RRDPLAT-123: what changed`) in the commit subject, and a branch rebased on `origin/main` with passing type-check and affected tests on push.
 - **Agents never use `--no-verify`, never disable a hook and never push to `main`.** If a hook fails, fix the cause. If a hook itself looks wrong, stop and say so in the pull request.
-- Before opening a pull request, run `npx releaseready-hooks verify` (the same check CI runs) and report the result.
+- Before opening a pull request, run `npx buildproveship-hooks verify` (the same check CI runs) and report the result.

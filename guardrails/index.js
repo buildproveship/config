@@ -1,6 +1,6 @@
-// releaseready-guardrails: the mechanical half of the buildproveship-code-quality skill (CLI in cli.js).
+// buildproveship-guardrails: the mechanical half of the buildproveship-code-quality skill (CLI in cli.js).
 //
-// Repo settings live in releaseready-guardrails.json (see guardrails/config.schema.json). Every allowlist entry
+// Repo settings live in buildproveship-guardrails.json (see guardrails/config.schema.json). Every allowlist entry
 // carries a reason, and an entry that no longer matches anything is itself an error.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -12,7 +12,7 @@ import { alwaysExcluded, generatedGlobs, matches, rules } from "./rules.js";
 import { skillDrift } from "./skill.js";
 
 const require = createRequire(import.meta.url);
-const configFile = "releaseready-guardrails.json";
+const configFile = "buildproveship-guardrails.json";
 /** The most duplication any repo may have (owner decision, 25 Nov 2026, RRDSCRUM-662); a repo may set a lower threshold. */
 export const maxJscpdThreshold = 1;
 const jscpdFormats = "javascript,typescript,jsx,tsx,python";
@@ -254,7 +254,7 @@ function runJscpd(root, config) {
  * Every static finding in `root`, before the allowlist.
  *
  * @param {string} root
- * @param {GuardrailsConfig} [config] the repo's releaseready-guardrails.json, read when not given
+ * @param {GuardrailsConfig} [config] the repo's buildproveship-guardrails.json, read when not given
  */
 export async function findAll(root, config = loadConfig(root)) {
   const repo = repoFiles(root);
@@ -280,7 +280,7 @@ export async function check(root, options = {}) {
     );
   }
   console.log(
-    `releaseready-guardrails: ${String(reported.length)} error(s), ${String(allowed)} allowed by ${configFile}`,
+    `buildproveship-guardrails: ${String(reported.length)} error(s), ${String(allowed)} allowed by ${configFile}`,
   );
   let ok = reported.length === 0;
   if (!options.staticOnly) {

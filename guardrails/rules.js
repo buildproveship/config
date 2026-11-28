@@ -1,4 +1,4 @@
-// Static rules of releaseready-guardrails. Each rule names the 18 Nov 2026 review findings it prevents; the skill
+// Static rules of buildproveship-guardrails. Each rule names the 18 Nov 2026 review findings it prevents; the skill
 // (skill/buildproveship-code-quality/SKILL.md) explains the fix. Every rule is a pure function of the repo's files.
 import {
   parse as parseJsonc,
@@ -776,7 +776,7 @@ const brandHistoryLine = /formerly|renamed|rebrand|\(history\)|previously/i;
 
 /**
  * The 23 Nov 2026 rebrand: the product is BuildProveShip. New "ReleaseReady" in Markdown docs outside history fails.
- * Lowercase identifiers (`releaseready-guardrails`, the `releaseready()` ESLint helper) are tool names, not the brand.
+ * Lowercase identifiers (`buildproveship-guardrails`, the `buildproveship()` ESLint helper) are tool names, not the brand.
  * Inline code, fenced code blocks and URLs are not prose: they quote identifiers, paths and links that the code or
  * org-reference changes rename.
  *

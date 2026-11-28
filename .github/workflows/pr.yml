@@ -1,4 +1,4 @@
-# Light pull request checks: format, typecheck, lint, tests and releaseready-guardrails (owner decision of 18 Nov 2026).
+# Light pull request checks: format, typecheck, lint, tests and buildproveship-guardrails (owner decision of 18 Nov 2026).
 name: Pull request
 on:
   pull_request:

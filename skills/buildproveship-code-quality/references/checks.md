@@ -1,6 +1,6 @@
 # What CI checks, and how to adopt it
 
-`releaseready-guardrails` and the shared ESLint config ship in `@buildproveship/config` (one source for every repo).
+`buildproveship-guardrails` and the shared ESLint config ship in `@buildproveship/config` (one source for every repo).
 Every repo runs them in `pr.yml`. Merge only when `pr.yml` is green. GitHub enforces this: the buildproveship org is
 on GitHub Team, and org rulesets on buildproveship, frontend-ui, test-management and test-data-management require the
 `ci` check (`ci / ci` where it comes from the reusable workflow) on a branch up to date with `main`, with no bypass and
@@ -11,16 +11,16 @@ green (owner decision, 25 Nov 2026).
 ## Commands
 
 ```sh
-npx releaseready-guardrails            # every check (what pr.yml runs): static rules, knip, jscpd
-npx releaseready-guardrails --static   # the fast file rules only
-npx releaseready-guardrails sync       # write this skill and its .claude stub into the repo
-npx releaseready-guardrails baseline   # print allow entries for today's findings (reasons left empty)
+npx buildproveship-guardrails            # every check (what pr.yml runs): static rules, knip, jscpd
+npx buildproveship-guardrails --static   # the fast file rules only
+npx buildproveship-guardrails sync       # write this skill and its .claude stub into the repo
+npx buildproveship-guardrails baseline   # print allow entries for today's findings (reasons left empty)
 ```
 
 Each repo wraps the first in `npm run check:guardrails` and runs it from its check command. For Python repos,
 install the current published `@buildproveship/config` as a dev dependency using
 [the package README's registry setup](https://github.com/buildproveship/config#install), commit the resulting
-caret range and lockfile, and run `npx releaseready-guardrails` next to ruff, `mypy --strict`, vulture and pip-audit.
+caret range and lockfile, and run `npx buildproveship-guardrails` next to ruff, `mypy --strict`, vulture and pip-audit.
 
 ## Rules
 
@@ -62,10 +62,10 @@ Shared ESLint (`@buildproveship/config/eslint`), on every JS and TS file:
 | `no-only-tests/no-only-tests`                            | `describe.only`, `it.only`, `test.only` …                             |
 | `reportUnusedDisableDirectives`                          | a disable comment that no longer suppresses anything                  |
 
-## The allowlist: `releaseready-guardrails.json`
+## The allowlist: `buildproveship-guardrails.json`
 
 A finding that is correct here (the owning repo defines the primitive; the consumer of compatibility code is named)
-goes in the repo's `releaseready-guardrails.json`, never in an inline comment:
+goes in the repo's `buildproveship-guardrails.json`, never in an inline comment:
 
 ```json
 {

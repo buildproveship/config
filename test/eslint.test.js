@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, test } from "node:test";
 import { ESLint } from "eslint";
-import { releaseready } from "../eslint.js";
+import { buildproveship } from "../eslint.js";
 
 const fixtures = join(import.meta.dirname, "fixtures");
 
@@ -14,7 +14,7 @@ async function ruleIds(dir, react, file, source) {
   const eslint = new ESLint({
     cwd,
     overrideConfigFile: true,
-    overrideConfig: releaseready({ tsconfigRootDir: cwd, react }),
+    overrideConfig: buildproveship({ tsconfigRootDir: cwd, react }),
   });
   const [result] =
     source === undefined
@@ -24,10 +24,10 @@ async function ruleIds(dir, react, file, source) {
   return result.messages.map((m) => m.ruleId ?? `fatal: ${m.message}`).sort();
 }
 
-describe("releaseready() ESLint config", () => {
+describe("buildproveship() ESLint config", () => {
   test("requires tsconfigRootDir", () => {
     // @ts-expect-error -- the call is deliberately missing its required option.
-    assert.throws(() => releaseready({}), TypeError);
+    assert.throws(() => buildproveship({}), TypeError);
   });
 
   test("type-aware rules catch floating promises, any and unsafe templates", async () => {

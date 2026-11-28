@@ -1,5 +1,5 @@
 # Copy to .github/workflows/copilot-setup-steps.yml. The Copilot coding agent runs the `copilot-setup-steps` job
-# before it starts, so the agent can run `npx releaseready-hooks verify` (the same check CI runs) before opening a PR;
+# before it starts, so the agent can run `npx buildproveship-hooks verify` (the same check CI runs) before opening a PR;
 # templates/copilot-instructions.md tells it to.
 name: Copilot setup steps
 on: workflow_dispatch

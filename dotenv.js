@@ -1,4 +1,4 @@
-// Shared .env loader for releaseready test frameworks (appium2, UPF). A thin wrapper over dotenv, so the
+// Shared .env loader for BuildProveShip test frameworks (appium2, UPF). A thin wrapper over dotenv, so the
 // parsing rules are dotenv's; it exists to give every repo the same call and to make it testable with a
 // synthetic env object instead of process.env.
 import { config } from "dotenv";

@@ -623,7 +623,7 @@ test("workflows install from GitHub Packages with a token, and the ones that run
 
 test("the package ships the hooks bin and its files", () => {
   const pkg = JSON.parse(readFileSync(join(REPO, "package.json"), "utf8"));
-  assert.equal(pkg.bin["releaseready-hooks"], "./hooks/cli.js");
+  assert.equal(pkg.bin["buildproveship-hooks"], "./hooks/cli.js");
   assert.ok(pkg.files.includes("hooks/*.js"));
   assert.ok(pkg.files.includes("templates"));
 });

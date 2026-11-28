@@ -23,7 +23,7 @@ async function rulesHit(files) {
   );
 }
 
-describe("releaseready-guardrails rules", () => {
+describe("buildproveship-guardrails rules", () => {
   test("a clean repo has no findings", async () => {
     assert.deepEqual(
       await rulesHit({
@@ -290,7 +290,7 @@ describe("releaseready-guardrails rules", () => {
       "src/generated/v1/api.ts": "export const g = 1;\n",
       "src/contract/schema/v1/index.ts": "export const h = 1;\n",
       "docs/history/legacy-notes.md": "# notes\n",
-      "releaseready-guardrails.json": JSON.stringify({
+      "buildproveship-guardrails.json": JSON.stringify({
         contractPaths: [
           {
             path: "src/contract/**",
@@ -408,7 +408,7 @@ describe("releaseready-guardrails rules", () => {
     ]);
     const allowed = await repo({
       "src/b.ts": "/*\n eslint-disable no-console\n*/\n",
-      "releaseready-guardrails.json": JSON.stringify({
+      "buildproveship-guardrails.json": JSON.stringify({
         allow: [
           {
             rule: "suppression-without-reason",
@@ -429,7 +429,7 @@ describe("releaseready-guardrails rules", () => {
   test("suppression-without-reason and argv-index: an allow entry needs a reason", async () => {
     for (const rule of ["suppression-without-reason", "argv-index"]) {
       const noReason = await repo({
-        "releaseready-guardrails.json": JSON.stringify({
+        "buildproveship-guardrails.json": JSON.stringify({
           allow: [{ rule, path: "src/a.ts" }],
         }),
       });
@@ -474,7 +474,7 @@ describe("releaseready-guardrails rules", () => {
     );
 
     const noReason = await repo({
-      "releaseready-guardrails.json": JSON.stringify({
+      "buildproveship-guardrails.json": JSON.stringify({
         allow: [{ rule: "hardcoded-tmp", path: "src/container.ts" }],
       }),
     });
@@ -482,7 +482,7 @@ describe("releaseready-guardrails rules", () => {
 
     const allowed = await repo({
       ...files,
-      "releaseready-guardrails.json": JSON.stringify({ allow: [entry] }),
+      "buildproveship-guardrails.json": JSON.stringify({ allow: [entry] }),
     });
     const { reported, allowed: count } = applyAllowlist(
       await findAll(allowed),
@@ -496,7 +496,7 @@ describe("releaseready-guardrails rules", () => {
 
     const stale = await repo({
       "src/other.ts": files["src/other.ts"],
-      "releaseready-guardrails.json": JSON.stringify({ allow: [entry] }),
+      "buildproveship-guardrails.json": JSON.stringify({ allow: [entry] }),
     });
     assert.deepEqual(
       applyAllowlist(await findAll(stale), loadConfig(stale).allow ?? [])
@@ -504,7 +504,7 @@ describe("releaseready-guardrails rules", () => {
         .sort(),
       [
         "hardcoded-tmp src/other.ts",
-        "unused-allow releaseready-guardrails.json",
+        "unused-allow buildproveship-guardrails.json",
       ],
     );
   });
@@ -524,7 +524,7 @@ describe("releaseready-guardrails rules", () => {
   test("old-brand: new ReleaseReady in Markdown prose fails; history paths, history lines, tool names, code and URLs pass", async () => {
     const hits = await rulesHit({
       "README.md":
-        "# ReleaseReady\n\nBuildProveShip (formerly ReleaseReady).\nRun `npx releaseready-guardrails`.\n",
+        "# ReleaseReady\n\nBuildProveShip (formerly ReleaseReady).\nRun `npx buildproveship-guardrails`.\n",
       "docs/guide.md": "Release Ready docs\n",
       "docs/history/old.md": "ReleaseReady\n",
       "docs/decisions/adr-001.md": "ReleaseReady\n",
@@ -541,7 +541,7 @@ describe("releaseready-guardrails rules", () => {
 
   test("design-system bypass: opted-in app paths fail on a local ui-web component or a literal colour; tokens, imports, tests and other paths pass", async () => {
     const files = {
-      "releaseready-guardrails.json": JSON.stringify({
+      "buildproveship-guardrails.json": JSON.stringify({
         designSystem: { paths: ["apps/web/src/**"] },
       }),
       "apps/web/src/Button.tsx":
@@ -671,7 +671,7 @@ describe("releaseready-guardrails rules", () => {
       "apps/shared/generated/central-api.d.ts": lines(5000),
       "src/api.generated.ts": lines(5000),
       "src/vendor/big.ts": lines(5000),
-      "releaseready-guardrails.json": JSON.stringify({
+      "buildproveship-guardrails.json": JSON.stringify({
         fileLength: {
           generated: [
             {
@@ -714,7 +714,7 @@ describe("releaseready-guardrails rules", () => {
     const hits = await rulesHit({
       "src/a.ts": "x;\n".repeat(51),
       "src/b.ts": "x;\n".repeat(50),
-      "releaseready-guardrails.json": JSON.stringify({
+      "buildproveship-guardrails.json": JSON.stringify({
         fileLength: { maxLines: 50 },
       }),
     });
@@ -781,7 +781,7 @@ describe("allowlist", () => {
     assert.equal(allowed, 1);
     assert.deepEqual(
       reported.map((f) => `${f.rule} ${f.path}`),
-      ["legacy-marker src/b.ts", "unused-allow releaseready-guardrails.json"],
+      ["legacy-marker src/b.ts", "unused-allow buildproveship-guardrails.json"],
     );
   });
 
@@ -868,18 +868,18 @@ describe("allowlist", () => {
       { knip: { enabled: false } },
     ]) {
       const root = await repo({
-        "releaseready-guardrails.json": JSON.stringify(config),
+        "buildproveship-guardrails.json": JSON.stringify(config),
       });
       assert.throws(
         () => loadConfig(root),
-        /releaseready-guardrails\.json/,
+        /buildproveship-guardrails\.json/,
         JSON.stringify(config),
       );
     }
   });
   test("the new rules can be allowed with a reason", async () => {
     const root = await repo({
-      "releaseready-guardrails.json": JSON.stringify({
+      "buildproveship-guardrails.json": JSON.stringify({
         allow: [
           {
             rule: "unpublished-internal-dependency",
@@ -902,7 +902,7 @@ describe("allowlist", () => {
   test("an oversized file can be allowed with a reason, and a higher limit with a reason", async () => {
     const root = await repo({
       "src/big.ts": "x;\n".repeat(1001),
-      "releaseready-guardrails.json": JSON.stringify({
+      "buildproveship-guardrails.json": JSON.stringify({
         allow: [
           {
             rule: "oversized-source-file",
@@ -918,7 +918,7 @@ describe("allowlist", () => {
     );
     assert.deepEqual(reported, []);
     const raised = await repo({
-      "releaseready-guardrails.json": JSON.stringify({
+      "buildproveship-guardrails.json": JSON.stringify({
         fileLength: {
           maxLines: 1200,
           reason: "Measured 1,180 lines in the parser on 20 Nov 2026",
@@ -939,7 +939,7 @@ describe("CLI", () => {
     assert.equal(failing.status, 1, failing.stdout);
     assert.match(failing.stdout, /src\/old\.ts:1 {2}legacy-marker/);
     writeFileSync(
-      join(root, "releaseready-guardrails.json"),
+      join(root, "buildproveship-guardrails.json"),
       JSON.stringify({
         allow: [
           {
@@ -960,7 +960,7 @@ describe("CLI", () => {
 });
 
 describe("allowlist schema", () => {
-  test("every rule the scanners emit can be allowlisted in releaseready-guardrails.json", () => {
+  test("every rule the scanners emit can be allowlisted in buildproveship-guardrails.json", () => {
     const source = ["rules.js", "old-code-rules.js"]
       .map((file) =>
         readFileSync(new URL(`../guardrails/${file}`, import.meta.url), "utf8"),

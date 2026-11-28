@@ -1,7 +1,7 @@
 # @buildproveship/config
 
 One source for the code-quality settings every BuildProveShip repo uses: an ESLint flat config, a Prettier config, a strict
-tsconfig base, a Renovate preset, the `releaseready-guardrails` checker and the `buildproveship-code-quality` skill.
+tsconfig base, a Renovate preset, the `buildproveship-guardrails` checker and the `buildproveship-code-quality` skill.
 Published to GitHub Packages as `@buildproveship/config`.
 
 ## Install
@@ -29,10 +29,10 @@ npm install --save-dev @buildproveship/config eslint prettier typescript
 ```js
 // eslint.config.js
 import { defineConfig } from "eslint/config";
-import { releaseready } from "@buildproveship/config/eslint";
+import { buildproveship } from "@buildproveship/config/eslint";
 
 export default defineConfig(
-  releaseready({ tsconfigRootDir: import.meta.dirname }), // add `react: true` in React repos
+  buildproveship({ tsconfigRootDir: import.meta.dirname }), // add `react: true` in React repos
   { ignores: ["generated/**"] }, // repo-specific additions, each with a comment saying why
 );
 ```
@@ -95,7 +95,7 @@ three [Husky](https://typicode.github.io/husky/) hooks, each a script in [`hooks
 
 ```sh
 npm install --save-dev @buildproveship/config
-npm pkg set scripts.prepare="releaseready-hooks install"
+npm pkg set scripts.prepare="buildproveship-hooks install"
 npm install # runs prepare; commit the generated .husky/ files
 ```
 
@@ -117,9 +117,9 @@ Affected tests: `pre-push` runs the repo's `test:affected` script with the chang
 A change that touches only `*.md`, `docs/` or `LICENSE` skips type-check and tests. Full E2E is never in a hook: run
 `npm run check:full`.
 
-`npx releaseready-hooks verify` runs `npm run check`, the same command CI runs.
+`npx buildproveship-hooks verify` runs `npm run check`, the same command CI runs.
 
-`npx releaseready-hooks verify-clean` checks committed `HEAD` in a disposable local clone: normal `npm ci`
+`npx buildproveship-hooks verify-clean` checks committed `HEAD` in a disposable local clone: normal `npm ci`
 (including lifecycle scripts), then `npm run check`. It requires a committed npm lockfile. Dependencies and generated
 outputs must be produced by those ordinary commands; it does not borrow the caller's `node_modules`, ignored output
 or untracked helpers. Paths with spaces are supported. The caller's files and Git configuration are left untouched,
@@ -146,12 +146,12 @@ the full commit sha of a release tag:
 - [`reusable-ci.yml`](.github/workflows/reusable-ci.yml): runs for ready pull requests and `main` (drafts are skipped; the
   caller adds `ready_for_review`), one run per PR (`cancel-in-progress`), docs-only PRs skip the checks
   (`docs-only-pattern`), caches npm and, with `cache-paths`, build output. The required status check is the job `ci`; a
-  skipped run counts as passed. It runs `check-command` (default `npx releaseready-hooks verify`).
+  skipped run counts as passed. It runs `check-command` (default `npx buildproveship-hooks verify`).
 - [`reusable-nightly.yml`](.github/workflows/reusable-nightly.yml): the full E2E (`npm run check:full`) on a schedule.
 - [`templates/copilot-setup-steps.yml`](templates/copilot-setup-steps.yml): the Copilot coding agent's environment
   installs Node, dependencies and the pinned, checksum-verified `gitleaks` prerequisite through the [shared action](.github/actions/install-gitleaks).
   The copied workflow includes an immutable installer reference; the rollout renderer substitutes the already-selected Config release SHA.
-  Both paths install the scanner once. The agent rules tell it to run `npx releaseready-hooks verify` before it opens a pull request.
+  Both paths install the scanner once. The agent rules tell it to run `npx buildproveship-hooks verify` before it opens a pull request.
 
 The `runner` input defaults to `auto` (owner decision, 28 Nov 2026; RRDPLAT-114 budget), so no repo needs a runner rule of
 its own. A short `route` job picks the cheapest runner that can take the job now: GitHub-hosted `ubuntu-24.04` for public
@@ -167,18 +167,18 @@ for pull requests.
 
 Agents and vendors also read [docs/defects-we-dont-create.md](docs/defects-we-dont-create.md) (the defect classes to avoid) and write tickets with [docs/ticket-template.md](docs/ticket-template.md).
 
-`releaseready-guardrails` is the mechanical half of the
+`buildproveship-guardrails` is the mechanical half of the
 [`buildproveship-code-quality` skill](skill/buildproveship-code-quality/SKILL.md), which encodes the 191 findings of the
 18 Nov 2026 cross-repo review. Run it from the repo root:
 
 ```sh
-npx releaseready-guardrails            # static rules + knip + jscpd; what pr.yml runs (wrap it in npm run check:guardrails)
-npx releaseready-guardrails --static   # static rules only
-npx releaseready-guardrails sync       # copy the skill to skills/buildproveship-code-quality/ and .claude/skills/
-npx releaseready-guardrails baseline   # allow entries for today's findings, reasons left empty
+npx buildproveship-guardrails            # static rules + knip + jscpd; what pr.yml runs (wrap it in npm run check:guardrails)
+npx buildproveship-guardrails --static   # static rules only
+npx buildproveship-guardrails sync       # copy the skill to skills/buildproveship-code-quality/ and .claude/skills/
+npx buildproveship-guardrails baseline   # allow entries for today's findings, reasons left empty
 ```
 
-The rules, the allowlist format (`releaseready-guardrails.json`, validated by
+The rules, the allowlist format (`buildproveship-guardrails.json`, validated by
 [`guardrails/config.schema.json`](guardrails/config.schema.json)) and the AGENTS.md block are in
 [the checks reference](skill/buildproveship-code-quality/references/checks.md). The skill's repo copy must equal the
 published one (`skill-drift`), so it changes only here.
@@ -221,7 +221,7 @@ Existing findings go in a baseline in the consumer repo, never a switch-off:
 ## Python
 
 Python repos cannot consume the ESLint config; observability keeps the equivalent ruff and `mypy --strict` settings in
-its own `pyproject.toml`, runs vulture and pip-audit, uses the same Renovate preset, and runs `releaseready-guardrails`
+its own `pyproject.toml`, runs vulture and pip-audit, uses the same Renovate preset, and runs `buildproveship-guardrails`
 through `npx` for the language-neutral rules (legacy markers, README history, skill drift, jscpd).
 
 ## Rollout planning

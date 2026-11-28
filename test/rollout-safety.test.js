@@ -69,7 +69,7 @@ test("private consumers without workflows can be planned and generated hooks hav
   assert.ok(plan.changes.some((c) => c.path === ".github/workflows/pr.yml"));
   assert.ok(plan.changes.every((c) => !c.path.startsWith(".husky/")));
   assert.deepEqual(plan.actions, [
-    "npx --no-install releaseready-hooks install",
+    "npx --no-install buildproveship-hooks install",
   ]);
   assert.equal(
     existsSync(join(root, ".github")),
@@ -113,7 +113,7 @@ else if(kind==='gh' && a[0]==='pr' && a[1]==='list'){
 }else if(['managed','fresh'].includes(process.env.ROLLOUT_TEST_SCENARIO) && (
  (kind==='git' && ['checkout','add','commit','push'].includes(a[0])) ||
  (kind==='npm' && a.join(' ')==='install --ignore-scripts --no-audit --no-fund') ||
- (kind==='npx' && ['--no-install prettier --write package.json','--no-install releaseready-hooks install'].includes(a.join(' ')))
+ (kind==='npx' && ['--no-install prettier --write package.json','--no-install buildproveship-hooks install'].includes(a.join(' ')))
 ) ){}
 else if(['managed','fresh'].includes(process.env.ROLLOUT_TEST_SCENARIO) && kind==='sh' && a[0]==='-c' && a[1]===process.env.ROLLOUT_TEST_CHECK){}
 else if(['managed','fresh'].includes(process.env.ROLLOUT_TEST_SCENARIO) && kind==='gh' && a.join(' ')==='auth token'){console.log('synthetic-fixture-value');}
