@@ -8,9 +8,12 @@
 #   - one run per PR (cancel-in-progress): a new push cancels the superseded run. Merge-queue runs (`merge_group`) are
 #     never cancelled, because a cancelled queue run ejects the PR from the queue.
 #   - dependencies and build output cached
-#   - the default runner is GitHub-hosted `ubuntu-24.04` (owner decision, 25 Nov 2026, BPS-105). A repo opts into the
-#     self-hosted `rr-local` with `runner: rr-local` (frontend-ui only). Fork PRs never get it: a public repo would
-#     otherwise run a stranger's code on the owner's Mac, so they always run on a GitHub-hosted runner.
+#   - runner routing (owner decision, 28 Nov 2026): `runner: auto` (the default) picks the cheapest runner that can take
+#     the job now, in this order: (1) GitHub-hosted `ubuntu-24.04` for public repos and fork PRs (free, and a stranger's
+#     code never reaches a machine of ours); (2) the self-hosted `rr-local` Mac when it is online and idle; (3) the
+#     `spot-runner` label (an ephemeral AWS spot runner) when the caller sets one; (4) GitHub-hosted `ubuntu-24.04`.
+#     GitHub never falls back between labels by itself, so the small `route` job asks the API first. Any other
+#     `runner` value is used as given, with no routing.
 # Callers grant: permissions: { contents: read, pull-requests: read, packages: read } (packages: npm ci installs
 # @buildproveship/config from GitHub Packages, which needs a token even for a public package).
 name: Reusable CI
@@ -18,9 +21,17 @@ on:
   workflow_call:
     inputs:
       runner:
-        description: Runner label for same-repo PRs and main. Fork PRs always use ubuntu-24.04.
+        description: "`auto` routes to the cheapest available runner (see the header); any other value is a fixed runner label. Fork PRs and public repos always use ubuntu-24.04."
+        type: string
+        default: auto
+      local-runner:
+        description: Label of the self-hosted runner that `auto` tries first for private repos.
         type: string
         default: rr-local
+      spot-runner:
+        description: Label of the ephemeral spot runner `auto` uses when the local runner is offline or busy. Empty means fall back to ubuntu-24.04.
+        type: string
+        default: ""
       node-version-file:
         type: string
         default: .nvmrc
@@ -40,6 +51,13 @@ on:
         description: Build-input glob (including assets/generators outside src when needed). Shared keys also include manifests, npm locks, configs and the Node version file.
         type: string
         default: "src/**"
+    secrets:
+      runner-router-client-id:
+        description: Client ID of a GitHub App with read-only "Self-hosted runners" organisation permission. Optional; without it `auto` cannot see the local runner and skips it.
+        required: false
+      runner-router-private-key:
+        description: Private key of that App. The App token lives for the job only.
+        required: false
 permissions:
   contents: read
   packages: read
@@ -47,10 +65,74 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  # Picks the runner for `ci` (see the header). One short hosted job, skipped for drafts like `ci`.
+  route:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    outputs:
+      runs-on: ${{ steps.pick.outputs.runs-on }}
+    steps:
+      - id: need-token
+        name: Need the runner-status token?
+        env:
+          RUNNER: ${{ inputs.runner }}
+          FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+          PRIVATE: ${{ github.event.repository.private }}
+          HAS_KEY: ${{ secrets.runner-router-private-key != '' && secrets.runner-router-client-id != '' }}
+        run: |
+          set -euo pipefail
+          if [ "$RUNNER" = auto ] && [ "$FORK" != true ] && [ "$PRIVATE" != false ] && [ "$HAS_KEY" = true ]; then
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - id: token
+        if: ${{ steps.need-token.outputs.needed == 'true' }}
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ secrets.runner-router-client-id }}
+          private-key: ${{ secrets.runner-router-private-key }}
+          owner: ${{ github.repository_owner }}
+          permission-organization-self-hosted-runners: read
+      - id: pick
+        name: Pick the runner
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          RUNNER: ${{ inputs.runner }}
+          LOCAL: ${{ inputs.local-runner }}
+          SPOT: ${{ inputs.spot-runner }}
+          OWNER: ${{ github.repository_owner }}
+          FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+          PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          set -euo pipefail
+          hosted=ubuntu-24.04
+          pick() {
+            echo "runs-on=$(jq -cn --arg label "$1" '[$label]')" >> "$GITHUB_OUTPUT"
+            echo "Runner: $1 ($2)"
+            exit 0
+          }
+          if [ "$RUNNER" != auto ]; then pick "$RUNNER" "fixed by the caller"; fi
+          if [ "$FORK" = true ]; then pick "$hosted" "fork PR: never a machine of ours"; fi
+          if [ "$PRIVATE" = false ]; then pick "$hosted" "public repo: hosted minutes are free"; fi
+          idle=0
+          if [ -n "${GH_TOKEN:-}" ]; then
+            # An unreadable runner list counts as "no idle runner", never as a failed route.
+            idle=$(gh api "orgs/$OWNER/actions/runners" --paginate 2>/dev/null \
+              | jq -s --arg label "$LOCAL" '[.[].runners[] | select(.status == "online" and .busy == false and any(.labels[]; .name == $label))] | length' 2>/dev/null) || idle=0
+          fi
+          if [ "${idle:-0}" -gt 0 ]; then pick "$LOCAL" "online and idle"; fi
+          if [ -n "$SPOT" ]; then pick "$SPOT" "local runner offline, busy or not checkable"; fi
+          pick "$hosted" "no local or spot runner available"
   # The one required status check (`ci / ci`). Drafts skip it; docs-only changes report the policy exemption.
   ci:
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
-    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || inputs.runner }}
+    needs: route
+    if: ${{ needs.route.result == 'success' }}
+    runs-on: ${{ fromJSON(needs.route.outputs.runs-on) }}
     timeout-minutes: 20
     permissions:
       contents: read

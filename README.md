@@ -153,10 +153,15 @@ the full commit sha of a release tag:
   The copied workflow includes an immutable installer reference; the rollout renderer substitutes the already-selected Config release SHA.
   Both paths install the scanner once. The agent rules tell it to run `npx releaseready-hooks verify` before it opens a pull request.
 
-The `runner` input defaults to the owner's self-hosted `rr-local` runner (RRDPLAT-114, 25 Nov 2026: the org's
-GitHub-hosted Actions budget was spent), so no repo needs a runner rule of its own. **Pull requests from forks always run on `ubuntu-24.04`**: this repo and its consumers
-can be public, and the self-hosted runner must never execute a stranger's code. The nightly workflow never runs for pull
-requests.
+The `runner` input defaults to `auto` (owner decision, 28 Nov 2026; RRDPLAT-114 budget), so no repo needs a runner rule of
+its own. A short `route` job picks the cheapest runner that can take the job now: GitHub-hosted `ubuntu-24.04` for public
+repos and fork PRs (free); otherwise the self-hosted `rr-local` runner when the API shows it online and idle; otherwise the
+`spot-runner` label (an ephemeral AWS spot runner) if the caller sets one; otherwise `ubuntu-24.04`. GitHub never falls back
+between labels by itself, which is why the check runs first. **Pull requests from forks always run on `ubuntu-24.04`**: a
+stranger's code must never run on a machine of ours. Any other `runner` value is used as given. The route job reads runner
+status with a short-lived token from a read-only GitHub App (secrets `runner-router-client-id` and
+`runner-router-private-key`); without them `auto` cannot see the local runner and skips it. The nightly workflow never runs
+for pull requests.
 
 ## Guardrails and the code-quality skill
 

@@ -482,12 +482,21 @@ test("the reusable CI workflow keeps fork PRs off the self-hosted runner and ski
     /** @type {{ workflow_call: { inputs: Record<string, { default: string }> } }} */ (
       ci.on
     ).workflow_call.inputs;
-  assert.equal(inputs["runner"]?.default, "rr-local");
+  assert.equal(inputs["runner"]?.default, "auto");
   assert.equal(inputs["docs-only-pattern"]?.default, DOCS_ONLY_PATTERN);
-  assert.deepEqual(Object.keys(ci.jobs), ["ci"]);
+  assert.deepEqual(Object.keys(ci.jobs), ["route", "ci"]);
   const job = ci.jobs["ci"];
-  assert.equal(job?.["runs-on"], FORK_GUARD);
-  assert.match(job?.if ?? "", /pull_request\.draft/, "ci must skip drafts");
+  assert.equal(
+    job?.["runs-on"],
+    "${{ fromJSON(needs.route.outputs.runs-on) }}",
+    "ci runs where the route job sent it",
+  );
+  assert.equal(job?.needs, "route");
+  assert.match(
+    ci.jobs["route"]?.if ?? "",
+    /pull_request\.draft/,
+    "route (and so ci) must skip drafts",
+  );
   assert.equal(
     workflow(".github/workflows/classify-changes.yml").jobs["classify"]?.[
       "runs-on"
