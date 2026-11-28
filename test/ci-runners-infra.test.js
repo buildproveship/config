@@ -83,7 +83,7 @@ test("the IAM attach permission is scoped to one role and one policy, and the se
     comment,
     /nosemgrep: .*no-iam-priv-esc-funcs.*no-iam-resource-exposure.* -- \S/,
   );
-  assert.equal((budget.match(/nosemgrep/g) ?? []).length, 1);
+  assert.equal((budget.match(/nosemgrep/g) ?? []).length, 2);
   assert.match(
     budget,
     /Resource\s*=\s*module\.runners\.runners\.role_scale_up\.arn/,
@@ -120,5 +120,9 @@ test("the deny-launch policy is detached on the 1st of each month by a schedule 
   assert.match(
     budget,
     /Principal = \{ Service = "scheduler\.amazonaws\.com" \}/,
+  );
+  assert.match(
+    budget,
+    /nosemgrep: terraform\.lang\.security\.iam\.no-iam-resource-exposure\.no-iam-resource-exposure -- \S[^\n]*\n\s*Action\s*=\s*"iam:DetachRolePolicy"/,
   );
 });

@@ -147,6 +147,7 @@ resource "aws_iam_role_policy" "budget_reset" {
     Version = "2012-10-17"
     Statement = [{
       Effect   = "Allow"
+      # nosemgrep: terraform.lang.security.iam.no-iam-resource-exposure.no-iam-resource-exposure -- the monthly reset only detaches the deny-launch policy; it is limited to the scale-up role and that policy ARN
       Action   = "iam:DetachRolePolicy"
       Resource = module.runners.runners.role_scale_up.arn
       Condition = {
